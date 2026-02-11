@@ -370,13 +370,3 @@ async function handleHelp(bot: TelegramBot, chatId: number): Promise<void> {
 export async function getConfiguredChatId(): Promise<number | null> {
   return await getGroupChatId();
 }
-
-// uuid 임포트 추가 (package.json에는 없으므로 간단한 구현으로 대체)
-// uuid 대신 간단한 ID 생성 함수 사용
-function uuidv4(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
