@@ -48,10 +48,32 @@ function saveLocalStore(data: StoreData): void {
 export async function loadStore(): Promise<StoreData> {
   // 로컬 개발 환경 (KV 없음) - 파일 저장소 사용
   if (!isKVAvailable()) {
+    console.log('[Store] Using local file store (no KV available)');
     return loadLocalStore();
   }
 
-  // Vercel 환경 (KV 사용)
+  console.log('[Store] Using KV store');
+  
+  // Upstash Redis 직접 사용
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    const { Redis } = await import('@upstash/redis');
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+    const data = await redis.get<StoreData>(STORE_KEY);
+    if (!data) {
+      return {
+        group_chat_id: null,
+        items: [],
+        sources: [],
+        notices: [],
+      };
+    }
+    return data;
+  }
+
+  // Vercel KV 사용
   const { kv } = await import('@vercel/kv');
   const data = await kv.get<StoreData>(STORE_KEY);
   if (!data) {
@@ -68,11 +90,25 @@ export async function loadStore(): Promise<StoreData> {
 export async function saveStore(data: StoreData): Promise<void> {
   // 로컬 개발 환경 (KV 없음) - 파일 저장소 사용
   if (!isKVAvailable()) {
+    console.log('[Store] Saving to local file store');
     saveLocalStore(data);
     return;
   }
 
-  // Vercel 환경 (KV 사용)
+  console.log('[Store] Saving to KV store');
+  
+  // Upstash Redis 직접 사용
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    const { Redis } = await import('@upstash/redis');
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+    await redis.set(STORE_KEY, data);
+    return;
+  }
+
+  // Vercel KV 사용
   const { kv } = await import('@vercel/kv');
   await kv.set(STORE_KEY, data);
 }

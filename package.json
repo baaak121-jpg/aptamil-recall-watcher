@@ -12,6 +12,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@upstash/redis": "^1.36.2",
     "@vercel/kv": "^1.0.1",
     "@vercel/node": "^3.0.12",
     "cheerio": "^1.0.0-rc.12",
