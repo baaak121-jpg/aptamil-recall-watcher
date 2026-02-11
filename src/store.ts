@@ -7,9 +7,12 @@ import { join } from 'path';
 const STORE_KEY = 'aptamil_watcher_data';
 const LOCAL_STORE_PATH = join(process.cwd(), '.local-store.json');
 
-// Vercel KV 사용 가능 여부 확인
+// Vercel KV 또는 Upstash Redis 사용 가능 여부 확인
 const isKVAvailable = () => {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  return !!(
+    (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
+    (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+  );
 };
 
 // 로컬 파일 저장소 로드
