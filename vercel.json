@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "api/telegram.ts": {
+      "memory": 1024,
+      "maxDuration": 10
+    },
+    "api/cron.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
+}

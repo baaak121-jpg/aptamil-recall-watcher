@@ -1,0 +1,39 @@
+name: Daily Aptamil Recall Scan
+
+on:
+  # 매일 UTC 00:00 실행 (KST 09:00)
+  schedule:
+    - cron: '0 0 * * *'
+  
+  # 수동 실행 가능
+  workflow_dispatch:
+
+jobs:
+  trigger-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger Vercel Cron Endpoint
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.VERCEL_URL }}/api/cron" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+          
+          if [ "$http_code" -ne 200 ]; then
+            echo "❌ Cron execution failed!"
+            exit 1
+          fi
+          
+          echo "✅ Daily scan completed successfully!"
+      
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "⚠️ Daily scan failed. Check logs for details."
+          # 필요시 여기에 Telegram 알림 추가 가능
