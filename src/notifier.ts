@@ -12,15 +12,15 @@ export function formatDailyReport(report: DailyReport): string {
 
   const riskLine = `📊 *상태*: ${report.risk_level}\n`;
   const changeLine = `🔄 *변경 감지*: ${report.changed_sources > 0 ? '있음' : '없음'}\n`;
-  const matchLine = `🍼 *내 제품 MHD*: 해당 ${report.matched_count}개 / 확인필요 ${report.uncertain_count}개 / 비해당 ${report.unmatched_count}개\n`;
+  const matchLine = `🍼 *내 제품 MHD 이슈사항 여부*:\n해당 ${report.matched_count}개 / 확인필요 ${report.uncertain_count}개 / 미해당 ${report.unmatched_count}개\n`;
 
   // 국가별 결과 섹션
   const countrySection = formatCountryResults(report.country_results);
 
   const summarySection = `\n📝 *요약*:\n${report.summary}\n`;
 
-  // 링크 섹션 - 해당/확인필요가 있을 때만 클릭 가능하게
-  const linksSection = formatLinksSection(report);
+  // 모든 모니터링 소스 표기
+  const linksSection = `\n🔗 *모니터링 소스*:\n${report.source_links.map((link) => `• ${link}`).join('\n')}\n`;
 
   let actionSection = '';
   if (report.risk_level === '위험' && report.matched_items.length > 0) {
@@ -41,19 +41,6 @@ export function formatDailyReport(report: DailyReport): string {
     linksSection +
     actionSection
   );
-}
-
-/**
- * 링크 섹션 포맷팅 (해당/확인필요 있을 때 강조)
- */
-function formatLinksSection(report: DailyReport): string {
-  const hasIssues = report.matched_count > 0 || report.uncertain_count > 0;
-  
-  if (hasIssues) {
-    return `\n🔗 *공식 소스 확인* (클릭하여 상세 내용 확인):\n${report.source_links.map((link) => `• ${link}`).join('\n')}\n`;
-  } else {
-    return `\n🔗 *모니터링 소스*:\n${report.source_links.slice(0, 3).map((link) => `• ${link}`).join('\n')}\n`;
-  }
 }
 
 /**
@@ -87,11 +74,11 @@ function getCountryFlag(countryCode: string): string {
 
 function getRiskEmoji(level: RiskLevel): string {
   switch (level) {
-    case '위험':
+    case 'ACTION':
       return '🚨';
-    case '확인필요':
+    case 'WATCH':
       return '⚠️';
-    case '안전':
+    case 'INFO':
       return '🍼';
   }
 }

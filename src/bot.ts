@@ -24,19 +24,11 @@ export async function handleCommand(bot: TelegramBot, msg: Message): Promise<voi
   const chatId = msg.chat.id;
   const text = msg.text || '';
 
-  console.log(`[Bot] Received message from chat ${chatId}: "${text}"`);
-
   try {
     if (text.startsWith('/setup')) {
       await handleSetup(bot, chatId);
     } else if (text.startsWith('/add')) {
-      // /add 모델번호 MHD 형식 체크
-      const parts = text.split(/\s+/);
-      if (parts.length === 3) {
-        await handleAddDirect(bot, chatId, parts[1], parts[2]);
-      } else {
-        await handleAddStart(bot, chatId);
-      }
+      await handleAddStart(bot, chatId);
     } else if (text.startsWith('/list')) {
       await handleList(bot, chatId);
     } else if (text.startsWith('/remove')) {
@@ -45,12 +37,8 @@ export async function handleCommand(bot: TelegramBot, msg: Message): Promise<voi
       await handleSources(bot, chatId);
     } else if (text.startsWith('/help')) {
       await handleHelp(bot, chatId);
-    } else if (text.startsWith('/cancel')) {
-      await handleCancel(bot, chatId);
-    } else if (!text.startsWith('/')) {
+    } else {
       // 일반 메시지 (conversation state 확인)
-      console.log(`[Bot] Checking conversation state for chat ${chatId}`);
-      console.log(`[Bot] Current states:`, Array.from(conversationStates.keys()));
       await handleConversation(bot, msg);
     }
   } catch (error) {
@@ -63,39 +51,12 @@ async function handleSetup(bot: TelegramBot, chatId: number): Promise<void> {
   await setGroupChatId(chatId);
   await bot.sendMessage(
     chatId,
-    '✅ 이 그룹이 데일리 리포트 수신 그룹으로 설정되었습니다.\n매일 09:00 KST에 리포트가 전송됩니다.'
+    '✅ 이 그룹이 데일리 리포트 수신 그룹으로 설정되었습니다.\n매일 07:00 KST에 리포트가 전송됩니다.'
   );
 }
 
 async function handleAddStart(bot: TelegramBot, chatId: number): Promise<void> {
-  const parts = await bot.sendMessage(
-    chatId,
-    `제품을 등록하려면 다음 형식으로 입력하세요:
-
-/add <모델번호> <MHD>
-
-예시:
-/add 1 15-06-2026
-/add 5 20.07.2026
-
-사용 가능한 모델 번호:
-${PRODUCT_MODELS.map((m, i) => `${i + 1}. ${m.label}`).join('\n')}
-
-또는 키보드로 선택:`,
-    {
-      reply_markup: {
-        inline_keyboard: createModelKeyboard(),
-      },
-    }
-  );
-
-  conversationStates.set(chatId, {
-    chat_id: chatId,
-    step: 'awaiting_model',
-  });
-}
-
-function createModelKeyboard(): TelegramBot.InlineKeyboardButton[][] {
+  // 모델 선택 키보드 생성
   const keyboard: TelegramBot.InlineKeyboardButton[][] = [];
   for (let i = 0; i < PRODUCT_MODELS.length; i += 2) {
     const row: TelegramBot.InlineKeyboardButton[] = [
@@ -112,7 +73,17 @@ function createModelKeyboard(): TelegramBot.InlineKeyboardButton[][] {
     }
     keyboard.push(row);
   }
-  return keyboard;
+
+  await bot.sendMessage(chatId, '등록할 Aptamil 제품 모델을 선택하세요:', {
+    reply_markup: {
+      inline_keyboard: keyboard,
+    },
+  });
+
+  conversationStates.set(chatId, {
+    chat_id: chatId,
+    step: 'awaiting_model',
+  });
 }
 
 export async function handleCallbackQuery(
@@ -143,7 +114,7 @@ export async function handleCallbackQuery(
       await bot.answerCallbackQuery(query.id);
       await bot.sendMessage(
         chatId,
-        `✅ 선택한 모델: ${model.label}\n\n📅 MHD(유통기한)를 입력하세요.\n\n형식: DD-MM-YYYY (예: 15-06-2026)\n또는: 15.06.2026, 15/06/2026, 2026-06-15\n\n취소하려면 /cancel 입력`
+        `선택한 모델: ${model.label}\n\nMHD(유통기한)를 입력하세요.\n형식: DD-MM-YYYY (예: 15-06-2026)`
       );
     }
   } catch (error) {
@@ -157,38 +128,18 @@ async function handleConversation(bot: TelegramBot, msg: Message): Promise<void>
   const text = msg.text || '';
 
   const state = conversationStates.get(chatId);
-  if (!state) {
-    console.log(`[Bot] No conversation state for chat ${chatId}, message: "${text}"`);
-    return;
-  }
-  
-  console.log(`[Bot] Conversation state: ${state.step}, chat: ${chatId}, message: "${text}"`);
+  if (!state) return;
 
   if (state.step === 'awaiting_mhd' && state.selected_model) {
-    console.log(`[Bot] Parsing date input: "${text}"`);
     const mhd = parseUserDate(text);
 
     if (!mhd) {
-      console.log(`[Bot] Date parsing failed for: "${text}"`);
       await bot.sendMessage(
         chatId,
-        `❌ 잘못된 날짜 형식입니다.
-
-입력하신 값: "${text}"
-
-지원하는 형식:
-• DD-MM-YYYY (예: 15-06-2026)
-• DD.MM.YYYY (예: 15.06.2026)
-• DD/MM/YYYY (예: 15/06/2026)
-• YYYY-MM-DD (예: 2026-06-15)
-
-💡 그냥 메시지로 입력하세요 (답장 불필요)
-취소하려면 /cancel`
+        '❌ 잘못된 날짜 형식입니다.\nDD-MM-YYYY 형식으로 입력하세요. (예: 15-06-2026)'
       );
       return;
     }
-
-    console.log(`[Bot] Date parsed successfully: "${mhd}"`);
 
     const item: RegisteredItem = {
       id: uuidv4(),
@@ -200,16 +151,13 @@ async function handleConversation(bot: TelegramBot, msg: Message): Promise<void>
 
     try {
       await addItem(item);
-      console.log(`[Bot] Item added successfully: ${item.model_label} (${item.mhd})`);
       await bot.sendMessage(
         chatId,
         `✅ 등록 완료!\n\n모델: ${item.model_label}\nMHD: ${item.mhd}`
       );
       conversationStates.delete(chatId);
     } catch (error) {
-      console.error(`[Bot] Error adding item:`, error);
       await bot.sendMessage(chatId, `❌ 등록 실패: ${error}`);
-      // 에러 발생 시에도 state 유지 (재시도 가능)
     }
   }
 }
@@ -280,64 +228,6 @@ async function handleSources(bot: TelegramBot, chatId: number): Promise<void> {
   await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
 }
 
-async function handleAddDirect(
-  bot: TelegramBot,
-  chatId: number,
-  modelInput: string,
-  mhdInput: string
-): Promise<void> {
-  // 모델 번호 또는 키로 찾기
-  const modelIndex = parseInt(modelInput, 10) - 1;
-  let model: ProductModel | undefined;
-
-  if (!isNaN(modelIndex) && modelIndex >= 0 && modelIndex < PRODUCT_MODELS.length) {
-    model = PRODUCT_MODELS[modelIndex];
-  } else {
-    model = getModelByKey(modelInput);
-  }
-
-  if (!model) {
-    await bot.sendMessage(chatId, `❌ 모델을 찾을 수 없습니다: "${modelInput}"\n\n/add 명령어로 모델 목록을 확인하세요.`);
-    return;
-  }
-
-  const mhd = parseUserDate(mhdInput);
-  if (!mhd) {
-    await bot.sendMessage(
-      chatId,
-      `❌ 잘못된 날짜 형식입니다: "${mhdInput}"\n\n예시: /add 1 15-06-2026`
-    );
-    return;
-  }
-
-  const item: RegisteredItem = {
-    id: uuidv4(),
-    model_key: model.key,
-    model_label: model.label,
-    mhd,
-    created_at: new Date().toISOString(),
-  };
-
-  try {
-    await addItem(item);
-    await bot.sendMessage(chatId, `✅ 등록 완료!\n\n모델: ${item.model_label}\nMHD: ${item.mhd}`);
-  } catch (error) {
-    await bot.sendMessage(chatId, `❌ 등록 실패: ${error}`);
-  }
-}
-
-async function handleCancel(bot: TelegramBot, chatId: number): Promise<void> {
-  const state = conversationStates.get(chatId);
-  
-  if (!state) {
-    await bot.sendMessage(chatId, '진행 중인 작업이 없습니다.');
-    return;
-  }
-  
-  conversationStates.delete(chatId);
-  await bot.sendMessage(chatId, '✅ 취소되었습니다.');
-}
-
 async function handleHelp(bot: TelegramBot, chatId: number): Promise<void> {
   const helpText = `
 🍼 *Aptamil Recall Watcher*
@@ -345,20 +235,18 @@ async function handleHelp(bot: TelegramBot, chatId: number): Promise<void> {
 *사용 가능한 명령어*:
 
 /setup - 이 그룹을 데일리 리포트 수신 그룹으로 설정
-/add - 제품 추가 (키보드 선택)
-/add <번호> <MHD> - 직접 입력 (예: /add 1 15-06-2026)
+/add - 제품 추가 (모델 + MHD)
 /list - 등록된 제품 목록 보기
 /remove <번호|ID> - 제품 삭제
 /sources - 모니터링 소스 확인
-/cancel - 진행 중인 작업 취소
 /help - 도움말
 
 *작동 방식*:
-- 매일 09:00 KST에 공식 소스를 스캔합니다.
+- 매일 07:00 KST에 공식 소스를 스캔합니다.
 - 변경 사항이 없어도 데일리 리포트를 전송합니다.
 - 등록한 MHD와 일치하는 리콜이 발견되면 ACTION 알림을 받습니다.
 
-*MHD 입력 형식*: DD-MM-YYYY, DD.MM.YYYY, DD/MM/YYYY 등
+*MHD 입력 형식*: DD-MM-YYYY (예: 15-06-2026)
 `;
 
   await bot.sendMessage(chatId, helpText, { parse_mode: 'Markdown' });
@@ -370,3 +258,13 @@ async function handleHelp(bot: TelegramBot, chatId: number): Promise<void> {
 export async function getConfiguredChatId(): Promise<number | null> {
   return await getGroupChatId();
 }
+// uuid 임포트 추가 (package.json에는 없으므로 간단한 구현으로 대체)
+// uuid 대신 간단한 ID 생성 함수 사용
+function uuidv4(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+

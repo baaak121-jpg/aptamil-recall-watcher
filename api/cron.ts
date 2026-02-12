@@ -1,5 +1,5 @@
 // api/cron.ts
-// Vercel Serverless Function - Daily Cron Job (09:00 KST)
+// Vercel Serverless Function - Daily Cron Job (07:00 KST)
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import TelegramBot from 'node-telegram-bot-api';
@@ -58,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       analysis.uncertain_count
     );
 
-    // 8. Tier 1 링크만 추출 (메시지 과밀 방지)
+    // 8. 모든 Tier 1 소스 링크 추출
     const tier1Links = tier1Sources.map((s) => s.url);
 
     // 9. 데일리 리포트 생성
@@ -127,11 +127,11 @@ function analyzeScanResults(
   const unmatched_count = allItems.length - matched_count - uncertain_count;
 
   // 라벨 결정
-  let risk_level: RiskLevel = '안전';
+  let risk_level: RiskLevel = 'INFO';
   if (matched_count > 0) {
-    risk_level = '위험';
+    risk_level = 'ACTION';
   } else if (changedSources > 0 || uncertain_count > 0) {
-    risk_level = '확인필요';
+    risk_level = 'WATCH';
   }
 
   return {
