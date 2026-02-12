@@ -74,11 +74,13 @@ function getCountryFlag(countryCode: string): string {
 
 function getRiskEmoji(level: RiskLevel): string {
   switch (level) {
-    case 'ACTION':
+    case '위험':
       return '🚨';
-    case 'WATCH':
+    case '확인필요':
       return '⚠️';
-    case 'INFO':
+    case '안전':
+      return '🍼';
+    default:
       return '🍼';
   }
 }
