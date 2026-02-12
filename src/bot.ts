@@ -35,6 +35,8 @@ export async function handleCommand(bot: TelegramBot, msg: Message): Promise<voi
       await handleRemove(bot, chatId, text);
     } else if (text.startsWith('/sources')) {
       await handleSources(bot, chatId);
+    } else if (text.startsWith('/report')) {
+      await handleReport(bot, chatId);
     } else if (text.startsWith('/help')) {
       await handleHelp(bot, chatId);
     } else {
@@ -209,23 +211,58 @@ async function handleRemove(bot: TelegramBot, chatId: number, text: string): Pro
 async function handleSources(bot: TelegramBot, chatId: number): Promise<void> {
   const sources = await getSources();
 
-  let message = '🔗 *모니터링 소스*:\n\n';
+  let message = '🔗 모니터링 소스:\n\n';
 
   if (sources.length === 0) {
     // 초기 소스 표시
     SOURCES.forEach((source) => {
-      message += `- ${source.source_key}\n  ${source.url}\n\n`;
+      const flag = getCountryFlag(source.country_code);
+      message += `${flag} ${source.source_key}\n`;
+      message += `${source.url}\n\n`;
     });
   } else {
     sources.forEach((source) => {
+      const flag = getCountryFlag(source.country_code);
       const lastChecked = source.last_checked_at
         ? new Date(source.last_checked_at).toLocaleString('ko-KR')
         : '미확인';
-      message += `- ${source.source_key}\n  ${source.url}\n  마지막 확인: ${lastChecked}\n\n`;
+      message += `${flag} ${source.source_key}\n`;
+      message += `${source.url}\n`;
+      message += `마지막 확인: ${lastChecked}\n\n`;
     });
   }
 
-  await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+  await bot.sendMessage(chatId, message);
+}
+
+function getCountryFlag(countryCode: string): string {
+  const flags: Record<string, string> = {
+    DE: '🇩🇪',
+    UK: '🇬🇧',
+    IE: '🇮🇪',
+    KR: '🇰🇷',
+  };
+  return flags[countryCode] || '🌐';
+}
+
+async function handleReport(bot: TelegramBot, chatId: number): Promise<void> {
+  await bot.sendMessage(chatId, '📊 수동 리포트를 생성 중입니다...');
+  
+  try {
+    // 크론 엔드포인트 호출
+    const response = await fetch('https://aptamil-recall-watcher.vercel.app/api/cron', {
+      method: 'POST',
+    });
+    
+    if (response.ok) {
+      await bot.sendMessage(chatId, '✅ 리포트가 전송되었습니다!');
+    } else {
+      await bot.sendMessage(chatId, '❌ 리포트 생성 실패. 잠시 후 다시 시도해주세요.');
+    }
+  } catch (error) {
+    console.error('[Bot] Error triggering report:', error);
+    await bot.sendMessage(chatId, '❌ 오류가 발생했습니다.');
+  }
 }
 
 async function handleHelp(bot: TelegramBot, chatId: number): Promise<void> {
@@ -239,6 +276,7 @@ async function handleHelp(bot: TelegramBot, chatId: number): Promise<void> {
 /list - 등록된 제품 목록 보기
 /remove <번호|ID> - 제품 삭제
 /sources - 모니터링 소스 확인
+/report - 즉시 리포트 생성 (수동)
 /help - 도움말
 
 *작동 방식*:
