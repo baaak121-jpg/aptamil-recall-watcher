@@ -8,27 +8,27 @@ import { DailyReport, RiskLevel, CountryResult } from './types';
  */
 export function formatDailyReport(report: DailyReport): string {
   const emoji = getRiskEmoji(report.risk_level);
-  const header = `${emoji} *Aptamil Recall Watcher — ${report.date} (KST)*\n\n`;
+  const header = `${emoji} Aptamil Recall Watcher — ${report.date} (KST)\n\n`;
 
-  const riskLine = `📊 *상태*: ${report.risk_level}\n`;
-  const changeLine = `🔄 *변경 감지*: ${report.changed_sources > 0 ? '있음' : '없음'}\n`;
-  const matchLine = `🍼 *내 제품 MHD 이슈사항 여부*:\n해당 ${report.matched_count}개 / 확인필요 ${report.uncertain_count}개 / 미해당 ${report.unmatched_count}개\n`;
+  const riskLine = `📊 상태: ${report.risk_level}\n`;
+  const changeLine = `🔄 변경 감지: ${report.changed_sources > 0 ? '있음' : '없음'}\n`;
+  const matchLine = `🍼 내 제품 MHD 이슈사항 여부:\n해당 ${report.matched_count}개 / 확인필요 ${report.uncertain_count}개 / 미해당 ${report.unmatched_count}개\n`;
 
   // 국가별 결과 섹션
   const countrySection = formatCountryResults(report.country_results);
 
-  const summarySection = `\n📝 *요약*:\n${report.summary}\n`;
+  const summarySection = `\n📝 요약:\n${report.summary}\n`;
 
   // 모든 모니터링 소스 표기
-  const linksSection = `\n🔗 *모니터링 소스*:\n${report.source_links.map((link) => `• ${link}`).join('\n')}\n`;
+  const linksSection = `\n🔗 모니터링 소스:\n${report.source_links.map((link) => `• ${link}`).join('\n')}\n`;
 
   let actionSection = '';
   if (report.risk_level === '위험' && report.matched_items.length > 0) {
-    actionSection = `\n🚨 *즉시 확인 필요*:\n\n`;
+    actionSection = `\n🚨 즉시 확인 필요:\n\n`;
     
     // 매칭된 제품별로 어느 소스에서 감지되었는지 표시
     for (const item of report.matched_items) {
-      actionSection += `📦 *${item.model_label}*\n`;
+      actionSection += `📦 ${item.model_label}\n`;
       actionSection += `   MHD: ${item.mhd}\n`;
       
       // 이 제품을 감지한 소스 찾기
@@ -47,7 +47,7 @@ export function formatDailyReport(report: DailyReport): string {
       actionSection += `\n`;
     }
     
-    actionSection += `⚠️ *해당 제품 사용을 즉시 중단하고 위 링크에서 공식 안내를 확인하세요.*\n`;
+    actionSection += `⚠️ 해당 제품 사용을 즉시 중단하고 위 링크에서 공식 안내를 확인하세요.\n`;
   }
 
   return (
@@ -68,14 +68,14 @@ export function formatDailyReport(report: DailyReport): string {
 function formatCountryResults(countryResults: CountryResult[]): string {
   if (countryResults.length === 0) return '';
 
-  let section = `\n🌍 *국가별 결과*:\n`;
+  let section = `\n🌍 국가별 결과:\n`;
 
   for (const result of countryResults) {
     const flag = getCountryFlag(result.country_code);
     const changeStatus = result.changed ? '변경 감지' : '변경 없음';
     const counts = `해당 ${result.matched_count} / 확인필요 ${result.uncertain_count}`;
 
-    section += `${flag} *${result.country_code}*: ${changeStatus}, ${counts}\n`;
+    section += `${flag} ${result.country_code}: ${changeStatus}, ${counts}\n`;
   }
 
   return section;
@@ -115,8 +115,8 @@ export async function sendDailyReport(
   const message = formatDailyReport(report);
 
   try {
+    // Markdown 제거 - URL 특수문자 문제 방지
     await bot.sendMessage(chatId, message, {
-      parse_mode: 'Markdown',
       disable_web_page_preview: true,
     });
     console.log(`[Notifier] Daily report sent to chat ${chatId}`);
