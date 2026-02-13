@@ -112,6 +112,7 @@ async function scanUrlCheck(
 
   return {
     source_key: source.source_key,
+    source_url: source.url,
     country_code: source.country_code,
     tier: source.tier,
     changed,
@@ -205,6 +206,7 @@ async function scanHtmlText(
 
   return {
     source_key: source.source_key,
+    source_url: source.url,
     country_code: source.country_code,
     tier: source.tier,
     changed,
@@ -333,6 +335,7 @@ async function scanListItems(
   
   return {
     source_key: source.source_key,
+    source_url: source.url,
     country_code: source.country_code,
     tier: source.tier,
     changed,
@@ -426,6 +429,7 @@ async function scanSectionHash(
   
   return {
     source_key: source.source_key,
+    source_url: source.url,
     country_code: source.country_code,
     tier: source.tier,
     changed,
@@ -517,6 +521,7 @@ async function scanContentKeyword(
   
   return {
     source_key: source.source_key,
+    source_url: source.url,
     country_code: source.country_code,
     tier: source.tier,
     changed,
