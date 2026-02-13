@@ -50,10 +50,11 @@ export async function handleCommand(bot: TelegramBot, msg: Message): Promise<voi
 }
 
 async function handleSetup(bot: TelegramBot, chatId: number): Promise<void> {
+  console.log(`[Bot] Setup: Saving chat ID: ${chatId}`);
   await setGroupChatId(chatId);
   await bot.sendMessage(
     chatId,
-    '✅ 이 그룹이 데일리 리포트 수신 그룹으로 설정되었습니다.\n매일 07:00 KST에 리포트가 전송됩니다.'
+    `✅ 이 그룹이 데일리 리포트 수신 그룹으로 설정되었습니다.\n매일 07:00 KST에 리포트가 전송됩니다.\n\n(Chat ID: ${chatId})`
   );
 }
 
