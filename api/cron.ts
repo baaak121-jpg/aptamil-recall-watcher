@@ -41,9 +41,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       sources = SOURCES;
     }
 
-    // 4. 스캔 실행 (Tier 1만 자동 판정에 사용)
-    const tier1Sources = getTier1Sources();
-    const scanResults = await scanAllSources(tier1Sources, items);
+    // 4. 스캔 실행 (모든 소스 스캔 - Tier 구분 없음)
+    const scanResults = await scanAllSources(sources, items);
 
     // 5. 결과 분석
     const analysis = analyzeScanResults(scanResults, items);
@@ -58,8 +57,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       analysis.uncertain_count
     );
 
-    // 8. 모든 Tier 1 소스 링크 추출
-    const tier1Links = tier1Sources.map((s) => s.url);
+    // 8. 모든 소스 링크 추출
+    const allLinks = sources.map((s) => s.url);
 
     // 9. 데일리 리포트 생성
     const report: DailyReport = {
@@ -70,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       uncertain_count: analysis.uncertain_count,
       unmatched_count: analysis.unmatched_count,
       summary,
-      source_links: tier1Links,
+      source_links: allLinks,
       matched_items: analysis.matched_items,
       scan_results: scanResults,
       country_results: countryResults,
