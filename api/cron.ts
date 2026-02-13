@@ -126,11 +126,11 @@ function analyzeScanResults(
   const unmatched_count = allItems.length - matched_count - uncertain_count;
 
   // 라벨 결정
-  let risk_level: RiskLevel = 'INFO';
+  let risk_level: RiskLevel = '안전';
   if (matched_count > 0) {
-    risk_level = 'ACTION';
+    risk_level = '위험';
   } else if (changedSources > 0 || uncertain_count > 0) {
-    risk_level = 'WATCH';
+    risk_level = '확인필요';
   }
 
   return {
