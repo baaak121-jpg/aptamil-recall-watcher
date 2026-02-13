@@ -61,7 +61,7 @@ export interface ScanResult {
   keywordMatches?: number;
 }
 
-export type RiskLevel = 'INFO' | 'WATCH' | 'ACTION';
+export type RiskLevel = '안전' | '확인필요' | '위험';
 
 export interface CountryResult {
   country_code: CountryCode;
