@@ -14,7 +14,14 @@ export interface RegisteredItem {
 }
 
 export type CountryCode = 'DE' | 'UK' | 'IE' | 'KR';
-export type ParseStrategy = 'HTML_TEXT' | 'TABLE_DATES' | 'CHECKER_LINK';
+export type ParseStrategy = 
+  | 'HTML_TEXT' 
+  | 'TABLE_DATES' 
+  | 'CHECKER_LINK'
+  | 'URL_CHECK'
+  | 'LIST_ITEMS'
+  | 'SECTION_HASH'
+  | 'CONTENT_KEYWORD';
 export type ReliabilityLabel = 'Official' | 'Regulator' | 'OfficialStore';
 
 export interface Source {
@@ -27,6 +34,9 @@ export interface Source {
   notes?: string;
   last_hash: string | null;
   last_checked_at: string | null;
+  // 신규 리콜 감지 옵션
+  keywords?: string[];
+  sectionHeading?: string;
 }
 
 export interface NoticeSnapshot {
@@ -46,9 +56,12 @@ export interface ScanResult {
   extracted_dates: string[];
   matched_items: RegisteredItem[];
   uncertain_items: RegisteredItem[]; // 확인 필요
+  // 신규 항목 정보
+  newItems?: Array<{ title: string; url: string; dateText?: string }>;
+  keywordMatches?: number;
 }
 
-export type RiskLevel = '안전' | '확인필요' | '위험';
+export type RiskLevel = 'INFO' | 'WATCH' | 'ACTION';
 
 export interface CountryResult {
   country_code: CountryCode;

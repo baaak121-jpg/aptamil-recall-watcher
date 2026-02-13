@@ -91,54 +91,86 @@ export function isValidDate(dateStr: string): boolean {
 
 /**
  * 사용자 입력 날짜 파싱 및 검증
- * 다양한 형식 지원: DD-MM-YYYY, DD.MM.YYYY, DD/MM/YYYY, YYYY-MM-DD
  */
 export function parseUserDate(input: string): string | null {
   const trimmed = input.trim();
   
-  // 1. DD-MM-YYYY 형식 (기본)
-  if (/^\d{2}-\d{2}-\d{4}$/.test(trimmed)) {
-    if (isValidDate(trimmed)) {
-      return trimmed;
-    }
+  // DD-MM-YYYY 형식 기대
+  if (!/^\d{2}-\d{2}-\d{4}$/.test(trimmed)) {
     return null;
-  }
-  
-  // 2. DD.MM.YYYY 형식
-  if (/^\d{2}\.\d{2}\.\d{4}$/.test(trimmed)) {
-    const normalized = trimmed.replace(/\./g, '-');
-    if (isValidDate(normalized)) {
-      return normalized;
-    }
-    return null;
-  }
-  
-  // 3. DD/MM/YYYY 형식
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
-    const normalized = trimmed.replace(/\//g, '-');
-    if (isValidDate(normalized)) {
-      return normalized;
-    }
-    return null;
-  }
-  
-  // 4. YYYY-MM-DD 형식 (ISO)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    const parts = trimmed.split('-');
-    const normalized = `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY로 변환
-    if (isValidDate(normalized)) {
-      return normalized;
-    }
-    return null;
-  }
-  
-  // 5. 공백 제거 후 재시도 (15 06 2026 → 15-06-2026)
-  const noSpaces = trimmed.replace(/\s+/g, '-');
-  if (/^\d{2}-\d{2}-\d{4}$/.test(noSpaces)) {
-    if (isValidDate(noSpaces)) {
-      return noSpaces;
-    }
   }
 
-  return null;
+  if (!isValidDate(trimmed)) {
+    return null;
+  }
+
+  return trimmed;
+}
+
+/**
+ * HTML에서 링크 추출 (신규 리콜 감지용)
+ */
+export function extractLinks(html: string, baseUrl: string): Array<{ title: string; url: string; dateText?: string }> {
+  const $ = cheerio.load(html);
+  const links: Array<{ title: string; url: string; dateText?: string }> = [];
+  
+  $('a').each((_, elem) => {
+    const href = $(elem).attr('href');
+    if (!href || href === '#' || href.startsWith('javascript:') || href === '') {
+      return;
+    }
+    
+    // 상대 경로 해결
+    let fullUrl = href;
+    if (!href.startsWith('http')) {
+      try {
+        const base = new URL(baseUrl);
+        fullUrl = new URL(href, base.origin).toString();
+      } catch {
+        return;
+      }
+    }
+    
+    // 제목 추출 (링크 텍스트 + 주변 텍스트)
+    const linkText = $(elem).text().trim();
+    const parentText = $(elem).parent().text().trim();
+    const title = linkText || parentText.substring(0, 100);
+    
+    // 날짜 텍스트 추출 시도 (주변 텍스트에서)
+    const dateText = extractDates(parentText)[0];
+    
+    links.push({ title, url: fullUrl, dateText });
+  });
+  
+  return links;
+}
+
+/**
+ * 특정 heading 이후 섹션 추출
+ */
+export function selectSectionByHeading(htmlText: string, heading: string): string {
+  const headingIndex = htmlText.toLowerCase().indexOf(heading.toLowerCase());
+  
+  if (headingIndex === -1) {
+    return '';
+  }
+  
+  // heading 이후 4000자만 추출
+  return htmlText.substring(headingIndex, headingIndex + 4000);
+}
+
+/**
+ * 키워드 필터링
+ */
+export function filterByKeywords(text: string, keywords: string[]): boolean {
+  const lowerText = text.toLowerCase();
+  return keywords.some(keyword => lowerText.includes(keyword.toLowerCase()));
+}
+
+/**
+ * 키워드 매칭 개수 반환
+ */
+export function countKeywordMatches(text: string, keywords: string[]): number {
+  const lowerText = text.toLowerCase();
+  return keywords.filter(keyword => lowerText.includes(keyword.toLowerCase())).length;
 }
