@@ -72,25 +72,10 @@ describe('Parser', () => {
       expect(parseUserDate('15-06-2026')).toBe('15-06-2026');
     });
 
-    it('should parse DD.MM.YYYY format', () => {
-      expect(parseUserDate('15.06.2026')).toBe('15-06-2026');
-    });
-
-    it('should parse DD/MM/YYYY format', () => {
-      expect(parseUserDate('15/06/2026')).toBe('15-06-2026');
-    });
-
-    it('should parse YYYY-MM-DD format', () => {
-      expect(parseUserDate('2026-06-15')).toBe('15-06-2026');
-    });
-
-    it('should parse with spaces', () => {
-      expect(parseUserDate('15 06 2026')).toBe('15-06-2026');
-    });
-
     it('should reject invalid format', () => {
+      expect(parseUserDate('15/06/2026')).toBeNull();
+      expect(parseUserDate('2026-06-15')).toBeNull();
       expect(parseUserDate('15-6-2026')).toBeNull();
-      expect(parseUserDate('abc')).toBeNull();
     });
 
     it('should reject invalid dates', () => {

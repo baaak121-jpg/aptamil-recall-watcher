@@ -96,10 +96,12 @@
 ## 소스 URL 확인 (긴급)
 
 ### 독일 (DE)
-- [x] Danone 독일 공식 리콜 페이지 URL 확인
-  - 확인 완료: `https://www.danone.de/newsroom/press-releases-list/rueckruf-vereinzelter-aptamil-chargen-de.html`
-- [x] Aptaclub DE 공식 공지/리콜 페이지 URL 확인
-  - 확인 완료: `https://www.aptaclub.de/stellungnahme.html`
+- [ ] Danone 독일 공식 리콜 페이지 URL 확인
+  - 현재: `https://www.danone.de/rueckrufe` (TODO)
+  - 실제 URL로 교체 필요
+- [ ] Aptaclub DE 공식 공지/리콜 페이지 URL 확인
+  - 현재: `https://www.aptaclub.de/wichtige-informationen` (TODO)
+  - 실제 URL로 교체 필요
 
 ### 영국 (UK)
 - [x] Aptaclub UK: `https://www.aptaclub.co.uk/important-product-information`

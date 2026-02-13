@@ -9,9 +9,6 @@ dist/
 .env
 .env.local
 
-# Local store (development)
-.local-store.json
-
 # IDE
 .vscode/
 .idea/

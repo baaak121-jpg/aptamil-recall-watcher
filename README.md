@@ -47,25 +47,6 @@ Telegram 봇 기반 Aptamil 분유 리콜 모니터링 시스템. 매일 공식 
 └── README.md
 ```
 
-## 💰 비용 (최적화 완료)
-
-**완전 무료 플랜 (OpenAI만 유료):**
-- ✅ Telegram Bot: 무료
-- 💳 OpenAI API: 월 $0.10 ~ $0.50 (약 130원 ~ 670원) ⭐
-- ✅ Vercel Hobby: 무료
-- ✅ Vercel KV: 무료
-- ✅ GitHub Actions: 무료
-
-**총 비용: 연간 커피 1~2잔 값!** ☕
-
-**최적화 기능:**
-- ✅ 변경 없으면 LLM 호출 0회 (고정 템플릿)
-- ✅ 변경 있어도 하루 1회만 호출
-- ✅ 입력 토큰 2,000 제한 (강제 truncate)
-- ✅ 출력 토큰 150 제한
-
-자세한 내용은 `COST_ANALYSIS.md` 참조
-
 ## 설치 및 설정
 
 ### 1. 의존성 설치
@@ -302,8 +283,8 @@ npm test
 현재 모니터링 중인 국가별 Tier 1 소스:
 
 ### 🇩🇪 독일 (DE)
-1. **Danone DE**: `https://www.danone.de/newsroom/press-releases-list/rueckruf-vereinzelter-aptamil-chargen-de.html` ✅
-2. **Aptaclub DE**: `https://www.aptaclub.de/stellungnahme.html` ✅
+1. **Danone DE**: `https://www.danone.de/rueckrufe` (TODO: 실제 URL 확인 필요)
+2. **Aptaclub DE**: `https://www.aptaclub.de/wichtige-informationen` (TODO: 실제 URL 확인 필요)
 
 ### 🇬🇧 영국 (UK)
 1. **Aptaclub UK**: `https://www.aptaclub.co.uk/important-product-information`
@@ -316,7 +297,7 @@ npm test
 1. **NutriciaStore Korea**: `https://www.nutriciastore.co.kr/board/notice`
 2. **MFDS (Tier 2)**: `https://www.mfds.go.kr/brd/m_99/list.do` (참고 링크만)
 
-**참고**: 독일 소스 URL은 확인 완료되었습니다. 다른 국가 소스도 정기적으로 URL 유효성을 확인하세요.
+**중요**: 실제 배포 전에 `src/sources.ts`에서 정확한 URL을 확인하고 업데이트해야 합니다.
 
 ## 제품 모델 리스트
 
@@ -386,5 +367,3 @@ MIT
 ## 연락처
 
 문의사항은 GitHub Issues를 통해 남겨주세요.
-#   a p t a m i l - r e c a l l - w a t c h e r  
- 

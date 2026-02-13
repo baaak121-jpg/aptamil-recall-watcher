@@ -18,18 +18,20 @@ Aptamil Recall Watcher는 4개국(DE, UK, IE, KR)의 공식 소스를 모니터�
 #### Tier 1
 
 **1. Danone/Nutricia Germany 공식 리콜 페이지**
-- URL: `https://www.danone.de/newsroom/press-releases-list/rueckruf-vereinzelter-aptamil-chargen-de.html` ✅
+- URL: `https://www.danone.de/rueckrufe` (TODO: 확인 필요)
 - 파싱 전략: `HTML_TEXT`
 - 신뢰도: `Official`
-- 설명: Danone 독일 공식 웹사이트의 Aptamil 리콜 공지 페이지
-- 상태: 확인 완료 (2026-02-11)
+- 설명: Danone 독일 공식 웹사이트의 리콜 섹션
+- 주의: 실제 URL 확인 필요. 가능한 대체 URL:
+  - `https://www.danone.de/produktrueckrufe`
+  - `https://www.aptamil.de/rueckrufe`
 
 **2. Aptaclub DE 공식 공지/리콜 페이지**
-- URL: `https://www.aptaclub.de/stellungnahme.html` ✅
+- URL: `https://www.aptaclub.de/wichtige-informationen` (TODO: 확인 필요)
 - 파싱 전략: `HTML_TEXT`
 - 신뢰도: `Official`
-- 설명: Aptaclub 독일 공식 사이트의 성명/리콜 페이지
-- 상태: 확인 완료 (2026-02-11)
+- 설명: Aptaclub 독일 공식 사이트의 중요 정보 섹션
+- 주의: 실제 URL 확인 필요
 
 ### 🇬🇧 영국 (UK)
 

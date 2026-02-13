@@ -1,0 +1,66 @@
+{
+  "group_chat_id": -5121134767,
+  "items": [
+    {
+      "id": "80442bf6-1b41-46a4-b4e4-eaf6f1a86533",
+      "model_key": "profutura_pre",
+      "model_label": "Aptamil Profutura PRE",
+      "mhd": "10-09-2026",
+      "created_at": "2026-02-11T13:54:55.061Z"
+    },
+    {
+      "id": "948c605c-903c-40d3-9b73-4e262eaca594",
+      "model_key": "profutura_1",
+      "model_label": "Aptamil Profutura 1",
+      "mhd": "24-10-2027",
+      "created_at": "2026-02-11T13:55:03.873Z"
+    }
+  ],
+  "sources": [
+    {
+      "source_key": "nutricia_kr",
+      "country_code": "KR",
+      "tier": 1,
+      "url": "https://www.nutriciastore.co.kr/board/notice",
+      "parse_strategy": "HTML_TEXT",
+      "reliability_label": "OfficialStore",
+      "notes": "NutriciaStore Korea 공지사항. 리콜/안전 안내 게시 시 해시 변경 감지 중심",
+      "last_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "last_checked_at": "2026-02-11T14:00:33.427Z"
+    },
+    {
+      "source_key": "danone_de",
+      "country_code": "DE",
+      "tier": 1,
+      "url": "https://www.danone.de/newsroom/press-releases-list/rueckruf-vereinzelter-aptamil-chargen-de.html",
+      "parse_strategy": "HTML_TEXT",
+      "reliability_label": "Official",
+      "notes": "Danone 독일 공식 Aptamil 리콜 공지 페이지 (확인 완료)",
+      "last_hash": "6a197bfa256de4b674d96322e627b96e8c96f81363bf225214e537b266520fdd",
+      "last_checked_at": "2026-02-11T14:00:33.406Z"
+    },
+    {
+      "source_key": "fsai_ie",
+      "country_code": "IE",
+      "tier": 1,
+      "url": "https://www.fsai.ie/news_centre/food_alerts.html",
+      "parse_strategy": "TABLE_DATES",
+      "reliability_label": "Regulator",
+      "notes": "Food Safety Authority of Ireland 공식 리콜 공지. 테이블/expiry date 포함",
+      "last_hash": "43170b4fa182147e08af502952ef32300c14f8a08e78854217fcd23fb51bc0e0",
+      "last_checked_at": "2026-02-11T14:00:35.524Z"
+    },
+    {
+      "source_key": "fsa_uk",
+      "country_code": "UK",
+      "tier": 1,
+      "url": "https://www.food.gov.uk/news-alerts/search/alerts",
+      "parse_strategy": "TABLE_DATES",
+      "reliability_label": "Regulator",
+      "notes": "UK Food Standards Agency 제품 리콜 공지. FSA-PRIN-xx-2026 형태 문서 포함",
+      "last_hash": "67c6ef4b54301b142dfe7103229abaa118cdea9b15a0941bbcd571487c5f7d42",
+      "last_checked_at": "2026-02-11T14:00:36.121Z"
+    }
+  ],
+  "notices": []
+}

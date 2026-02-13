@@ -5,14 +5,12 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx src/local.ts",
-    "test-cron": "tsx src/test-cron.ts",
     "build": "tsc",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "jest"
   },
   "dependencies": {
-    "@upstash/redis": "^1.36.2",
     "@vercel/kv": "^1.0.1",
     "@vercel/node": "^3.0.12",
     "cheerio": "^1.0.0-rc.12",
@@ -24,7 +22,6 @@
     "@types/jest": "^29.5.11",
     "@types/node": "^20.11.5",
     "@types/node-telegram-bot-api": "^0.64.0",
-    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "eslint": "^8.56.0",
