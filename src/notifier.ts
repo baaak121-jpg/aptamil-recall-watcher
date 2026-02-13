@@ -24,11 +24,30 @@ export function formatDailyReport(report: DailyReport): string {
 
   let actionSection = '';
   if (report.risk_level === '위험' && report.matched_items.length > 0) {
-    actionSection = `\n⚠️ *즉시 확인 필요*:\n`;
-    actionSection += report.matched_items
-      .map((item) => `- ${item.model_label} (MHD: ${item.mhd})`)
-      .join('\n');
-    actionSection += `\n\n🚨 *해당 제품 사용을 즉시 중단하고 공식 안내를 확인하세요.*\n`;
+    actionSection = `\n🚨 *즉시 확인 필요*:\n\n`;
+    
+    // 매칭된 제품별로 어느 소스에서 감지되었는지 표시
+    for (const item of report.matched_items) {
+      actionSection += `📦 *${item.model_label}*\n`;
+      actionSection += `   MHD: ${item.mhd}\n`;
+      
+      // 이 제품을 감지한 소스 찾기
+      const matchedSources = report.scan_results.filter(result => 
+        result.matched_items.some(matched => matched.id === item.id)
+      );
+      
+      if (matchedSources.length > 0) {
+        actionSection += `   감지 소스:\n`;
+        matchedSources.forEach(source => {
+          const flag = getCountryFlag(source.country_code);
+          actionSection += `   ${flag} ${source.source_key}\n`;
+          actionSection += `   ${source.source_url}\n`;
+        });
+      }
+      actionSection += `\n`;
+    }
+    
+    actionSection += `⚠️ *해당 제품 사용을 즉시 중단하고 위 링크에서 공식 안내를 확인하세요.*\n`;
   }
 
   return (

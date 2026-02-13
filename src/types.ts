@@ -49,6 +49,7 @@ export interface NoticeSnapshot {
 
 export interface ScanResult {
   source_key: string;
+  source_url: string;
   country_code: CountryCode;
   tier: 1 | 2;
   changed: boolean;

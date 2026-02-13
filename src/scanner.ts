@@ -38,6 +38,7 @@ export async function scanSource(
     console.error(`[Scanner] Error scanning ${source.source_key}:`, error);
     return {
       source_key: source.source_key,
+      source_url: source.url,
       country_code: source.country_code,
       tier: source.tier,
       changed: false,
@@ -159,6 +160,7 @@ async function scanHtmlText(
     console.log(`[Scanner] ${source.source_key}: No keyword matches, skipping hash comparison`);
     return {
       source_key: source.source_key,
+      source_url: source.url,
       country_code: source.country_code,
       tier: source.tier,
       changed: false,
@@ -269,6 +271,7 @@ async function scanListItems(
     console.warn(`[Scanner] ${source.source_key}: Empty HTML response`);
     return {
       source_key: source.source_key,
+      source_url: source.url,
       country_code: source.country_code,
       tier: source.tier,
       changed: false,
@@ -378,6 +381,7 @@ async function scanSectionHash(
     console.log(`[Scanner] ${source.source_key}: No keyword matches, skipping`);
     return {
       source_key: source.source_key,
+      source_url: source.url,
       country_code: source.country_code,
       tier: source.tier,
       changed: false,
@@ -458,6 +462,7 @@ async function scanContentKeyword(
     
     return {
       source_key: source.source_key,
+      source_url: source.url,
       country_code: source.country_code,
       tier: source.tier,
       changed: false,
