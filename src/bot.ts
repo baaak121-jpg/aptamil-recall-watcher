@@ -293,7 +293,21 @@ async function handleHelp(bot: TelegramBot, chatId: number): Promise<void> {
 
 /**
  * 그룹 chat_id 가져오기 (크론에서 사용)
+ * 환경변수 우선, 없으면 Store에서 가져오기
  */
 export async function getConfiguredChatId(): Promise<number | null> {
-  return await getGroupChatId();
+  // 환경변수에서 먼저 확인
+  const envChatId = process.env.TELEGRAM_GROUP_CHAT_ID;
+  if (envChatId) {
+    const chatId = parseInt(envChatId, 10);
+    if (!isNaN(chatId)) {
+      console.log(`[Bot] Using chat ID from environment: ${chatId}`);
+      return chatId;
+    }
+  }
+  
+  // Store에서 가져오기
+  const chatId = await getGroupChatId();
+  console.log(`[Bot] Using chat ID from store: ${chatId}`);
+  return chatId;
 }
