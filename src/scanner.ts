@@ -598,13 +598,20 @@ async function scanImageOcr(
     
     console.log(`[Scanner] ${source.source_key}: Extracted ${extractedDates.length} dates from OCR`);
     
-    // 제품명 + 날짜 조합으로 매칭
-    const matchResult = matchOcrResults(fullOcrText, registeredItems);
-    matched = matchResult.matched;
-    // notFound는 리콜 대상이 아니므로 uncertain이 아님
-    uncertain = [];
-    
-    console.log(`[Scanner] ${source.source_key}: Matched ${matched.length} items, Not in recall list ${matchResult.notFound.length} items`);
+    // OCR 실패 체크: 이미지가 변경되었는데 날짜를 추출하지 못한 경우
+    if (changed && extractedDates.length === 0) {
+      console.log(`[Scanner] ${source.source_key}: OCR failed - image changed but no dates extracted`);
+      matched = [];
+      uncertain = registeredItems; // 모든 항목을 확인필요로
+    } else {
+      // 제품명 + 날짜 조합으로 매칭
+      const matchResult = matchOcrResults(fullOcrText, registeredItems);
+      matched = matchResult.matched;
+      // notFound는 리콜 대상이 아니므로 uncertain이 아님
+      uncertain = [];
+      
+      console.log(`[Scanner] ${source.source_key}: Matched ${matched.length} items, Not in recall list ${matchResult.notFound.length} items`);
+    }
   } else {
     console.log(`[Scanner] ${source.source_key}: Skipping OCR (no change detected)`);
     matched = [];
