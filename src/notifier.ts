@@ -22,36 +22,11 @@ export function formatDailyReport(report: DailyReport): string {
 
   const summarySection = `\n📝 요약:\n${report.summary}\n`;
 
-  // 모든 모니터링 소스 표기
-  const linksSection = `\n🔗 모니터링 소스:\n${report.source_links.map((link) => `• ${link}`).join('\n')}\n`;
+  // 즉시 확인 필요 섹션 (매칭 + 확인필요 포함)
+  const actionSection = formatActionSection(report);
 
-  let actionSection = '';
-  if (report.risk_level === '위험' && report.matched_items.length > 0) {
-    actionSection = `\n🚨 즉시 확인 필요:\n\n`;
-    
-    // 매칭된 제품별로 어느 소스에서 감지되었는지 표시
-    for (const item of report.matched_items) {
-      actionSection += `📦 ${item.model_label}\n`;
-      actionSection += `   MHD: ${item.mhd}\n`;
-      
-      // 이 제품을 감지한 소스 찾기
-      const matchedSources = report.scan_results.filter(result => 
-        result.matched_items.some(matched => matched.id === item.id)
-      );
-      
-      if (matchedSources.length > 0) {
-        actionSection += `   감지 소스:\n`;
-        matchedSources.forEach(source => {
-          const flag = getCountryFlag(source.country_code);
-          actionSection += `   ${flag} ${source.source_key}\n`;
-          actionSection += `   ${source.source_url}\n`;
-        });
-      }
-      actionSection += `\n`;
-    }
-    
-    actionSection += `⚠️ 해당 제품 사용을 즉시 중단하고 위 링크에서 공식 안내를 확인하세요.\n`;
-  }
+  // 모든 모니터링 소스 표기 (현행화된 5개만)
+  const linksSection = formatMonitoringSources(report.source_links);
 
   return (
     header +
@@ -61,8 +36,8 @@ export function formatDailyReport(report: DailyReport): string {
     ocrSection +
     countrySection +
     summarySection +
-    linksSection +
-    actionSection
+    actionSection +
+    linksSection
   );
 }
 
@@ -74,7 +49,7 @@ function formatOcrResults(scanResults: any[]): string {
   
   if (!ocrResult) return '';
   
-  let section = `\n🖼️ IMAGE_OCR 결과 (KR 압타밀 안심 프로그램):\n`;
+  let section = `\n🇰🇷 KR 뉴트리시아 안심 프로그램:\n`;
   
   if (ocrResult.error) {
     section += `❌ OCR 오류: ${ocrResult.error}\n`;
@@ -119,6 +94,68 @@ function formatCountryResults(countryResults: CountryResult[]): string {
   }
 
   return section;
+}
+
+/**
+ * 즉시 확인 필요 섹션 (매칭 + 확인필요 항목 모두 포함)
+ */
+function formatActionSection(report: DailyReport): string {
+  const allAlertItems = [...report.matched_items];
+  
+  // 확인필요 항목도 추가
+  const uncertainItems = report.scan_results.flatMap(r => r.uncertain_items);
+  
+  if (allAlertItems.length === 0 && uncertainItems.length === 0) {
+    return '';
+  }
+  
+  let section = `\n🚨 즉시 확인 필요:\n\n`;
+  
+  // 매칭된 제품 (위험)
+  if (allAlertItems.length > 0) {
+    section += `⚠️ 리콜 대상 제품:\n`;
+    for (const item of allAlertItems) {
+      section += `📦 ${item.model_label}\n`;
+      section += `   MHD: ${item.mhd}\n`;
+      
+      // 이 제품을 감지한 소스 찾기
+      const matchedSources = report.scan_results.filter(result => 
+        result.matched_items.some(matched => matched.id === item.id)
+      );
+      
+      if (matchedSources.length > 0) {
+        section += `   감지 소스:\n`;
+        matchedSources.forEach(source => {
+          const flag = getCountryFlag(source.country_code);
+          section += `   ${flag} ${source.source_key}\n`;
+          section += `   ${source.source_url}\n`;
+        });
+      }
+      section += `\n`;
+    }
+  }
+  
+  // 확인 필요 항목
+  if (uncertainItems.length > 0) {
+    section += `⚠️ 확인 필요 항목:\n`;
+    for (const item of uncertainItems) {
+      section += `📦 ${item.model_key || item.model_label}\n`;
+      section += `   MHD: ${item.mhd}\n\n`;
+    }
+  }
+  
+  section += `⚠️ 해당 제품 사용을 즉시 중단하고 공식 안내를 확인하세요.\n`;
+  
+  return section;
+}
+
+/**
+ * 모니터링 소스 포맷팅 (현행화된 5개만)
+ */
+function formatMonitoringSources(sourceLinks: string[]): string {
+  if (sourceLinks.length === 0) return '';
+  
+  return `\n🔗 모니터링 소스:\n${sourceLinks.map((link) => `• ${link}`).join('\n')}\n`;
 }
 
 function getCountryFlag(countryCode: string): string {

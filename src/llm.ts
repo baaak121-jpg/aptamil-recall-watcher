@@ -16,23 +16,38 @@ export async function generateSummary(
   uncertainCount: number
 ): Promise<string> {
   const changedSources = scanResults.filter((r) => r.changed);
+  const ocrExecuted = scanResults.some((r) => r.ocrExecuted);
 
-  if (changedSources.length === 0) {
-    // 변경 없음 -> 고정 문구 (LLM 호출 안 함)
+  // 변경사항이 없고 OCR도 실행되지 않았을 때만 "변경 없음" 메시지
+  if (changedSources.length === 0 && !ocrExecuted) {
     return '✅ 변경 사항 없음. 모든 소스가 이전 스캔과 동일합니다.\n✅ 정기 모니터링이 정상적으로 작동 중입니다.\n✅ 다음 스캔은 내일 08:00 KST에 실행됩니다.';
   }
 
   // 변경된 소스 정보 요약 (국가별 그룹화)
-  const sourceInfo = changedSources
-    .map((r) => {
-      const dates = r.extracted_dates.length > 0 ? r.extracted_dates.join(', ') : '날짜 추출 실패';
-      return `- [${r.country_code}] ${r.source_key}: 변경 감지됨. 추출된 MHD: ${dates}`;
-    })
-    .join('\n');
+  const sourceInfoParts = [];
+  
+  if (changedSources.length > 0) {
+    sourceInfoParts.push('변경 감지된 소스:');
+    changedSources.forEach((r) => {
+      const dateCount = r.extracted_dates?.length || 0;
+      sourceInfoParts.push(`- [${r.country_code}] ${r.source_key}: 변경 감지, MHD ${dateCount}개 추출`);
+    });
+  }
+  
+  if (ocrExecuted) {
+    const ocrResult = scanResults.find(r => r.ocrExecuted);
+    if (ocrResult) {
+      const dateCount = ocrResult.extracted_dates?.length || 0;
+      sourceInfoParts.push(`\nOCR 실행됨:`);
+      sourceInfoParts.push(`- [KR] 뉴트리시아 안심 프로그램: MHD ${dateCount}개 추출`);
+    }
+  }
+  
+  const sourceInfo = sourceInfoParts.join('\n');
 
   const prompt = `당신은 Aptamil 분유 리콜 모니터링 봇입니다. 다음 스캔 결과를 3줄 이내로 요약하세요.
 
-스캔 결과 (국가별):
+스캔 결과:
 ${sourceInfo}
 
 매칭 결과:
@@ -40,7 +55,7 @@ ${sourceInfo}
 - 확인 필요: ${uncertainCount}개
 
 요약 규칙:
-1. 변경된 소스를 국가별로 간결히 설명 (DE, UK, IE, KR)
+1. 변경된 소스나 OCR 실행 내용을 간결히 설명
 2. 매칭된 항목이 있으면 "즉시 확인 필요" 강조
 3. 확인 필요 항목이 있으면 "수동 확인 권장" 언급
 4. 3줄 이내로 작성 (각 줄은 한 문장)
@@ -58,7 +73,24 @@ ${sourceInfo}
     return response.choices[0]?.message?.content?.trim() || '요약 생성 실패';
   } catch (error) {
     console.error('[LLM] Error generating summary:', error);
-    return `변경 감지됨 (${changedSources.length}개 소스). LLM 요약 실패.`;
+    
+    // Fallback 요약
+    let fallback = '';
+    if (changedSources.length > 0) {
+      fallback += `변경 감지됨 (${changedSources.length}개 소스). `;
+    }
+    if (ocrExecuted) {
+      fallback += 'KR 소스 OCR 실행 완료. ';
+    }
+    if (matchedCount > 0) {
+      fallback += `매칭 ${matchedCount}개 발견 - 즉시 확인 필요.`;
+    } else if (uncertainCount > 0) {
+      fallback += `확인 필요 ${uncertainCount}개.`;
+    } else {
+      fallback += '등록된 제품 중 리콜 대상 없음.';
+    }
+    
+    return fallback;
   }
 }
 
