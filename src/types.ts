@@ -66,6 +66,7 @@ export interface ScanResult {
   // IMAGE_OCR 관련
   ocrExecuted?: boolean;
   imageUrls?: string[];
+  ocrText?: string; // OCR 원본 텍스트 (제품별 날짜 표시용)
 }
 
 export type RiskLevel = '안전' | '확인필요' | '위험';

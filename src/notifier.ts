@@ -2,6 +2,7 @@
 
 import TelegramBot from 'node-telegram-bot-api';
 import { DailyReport, RiskLevel, CountryResult } from './types';
+import { parseOcrProducts } from './matcher';
 
 /**
  * 데일리 리포트 메시지 포맷팅
@@ -43,15 +44,23 @@ function formatOcrResults(scanResults: any[]): string {
     section += `❌ OCR 오류: ${ocrResult.error}\n`;
   } else {
     section += `✅ OCR 실행: ${ocrResult.ocrExecuted ? '예' : '아니오'}\n`;
-    section += `📅 추출된 MHD: ${ocrResult.extracted_dates?.length || 0}개\n`;
+    section += `📅 추출된 MHD: ${ocrResult.extracted_dates?.length || 0}개\n\n`;
     
-    // 추출된 날짜 목록 표시 (최대 20개까지)
-    if (ocrResult.extracted_dates && ocrResult.extracted_dates.length > 0) {
-      const dates = ocrResult.extracted_dates.slice(0, 20);
-      section += `📋 추출된 날짜:\n`;
-      section += `   ${dates.join(', ')}\n`;
-      if (ocrResult.extracted_dates.length > 20) {
-        section += `   ... 외 ${ocrResult.extracted_dates.length - 20}개\n`;
+    // OCR 텍스트가 있으면 제품별로 파싱해서 표시
+    if (ocrResult.ocrText) {
+      const products = parseOcrProducts(ocrResult.ocrText);
+      
+      if (products.length > 0) {
+        section += `📋 제품별 추출 결과:\n`;
+        products.forEach((product, idx) => {
+          section += `\n${idx + 1}. ${product.koreanName}\n`;
+          if (product.mhdList.length > 0) {
+            section += `   MHD (${product.mhdList.length}개): ${product.mhdList.join(', ')}\n`;
+          } else {
+            section += `   MHD: 없음\n`;
+          }
+        });
+        section += `\n`;
       }
     }
     

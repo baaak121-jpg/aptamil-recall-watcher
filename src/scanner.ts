@@ -581,6 +581,7 @@ async function scanImageOcr(
   
   let extractedDates: string[] = [];
   let ocrTexts: string[] = [];
+  let fullOcrText = '';
   let matched: RegisteredItem[] = [];
   let uncertain: RegisteredItem[] = [];
   
@@ -591,7 +592,7 @@ async function scanImageOcr(
     ocrTexts = await extractTextFromImages(absoluteImageUrls);
     
     // 모든 OCR 결과 합치기
-    const fullOcrText = ocrTexts.join('\n\n---\n\n');
+    fullOcrText = ocrTexts.join('\n\n---\n\n');
     
     // 모든 OCR 결과에서 날짜 추출
     extractedDates = extractDates(fullOcrText);
@@ -649,6 +650,7 @@ async function scanImageOcr(
     uncertain_items: uncertain,
     ocrExecuted: shouldRunOcr,
     imageUrls: absoluteImageUrls,
+    ocrText: fullOcrText || undefined,
   };
 }
 
