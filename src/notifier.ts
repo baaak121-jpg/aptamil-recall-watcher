@@ -3,6 +3,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { DailyReport, RiskLevel, CountryResult } from './types';
 import { parseOcrProducts } from './matcher';
+import { getModelByKey } from './sources';
 
 /**
  * 데일리 리포트 메시지 포맷팅
@@ -53,7 +54,16 @@ function formatOcrResults(scanResults: any[]): string {
       if (products.length > 0) {
         section += `📋 제품별 추출 결과:\n`;
         products.forEach((product, idx) => {
-          section += `\n${idx + 1}. ${product.koreanName}\n`;
+          // 영문 키가 있으면 영문 라벨 사용, 없으면 한글명 사용
+          let displayName = product.koreanName;
+          if (product.englishKey) {
+            const model = getModelByKey(product.englishKey);
+            if (model) {
+              displayName = `${model.label} (${product.englishKey})`;
+            }
+          }
+          
+          section += `\n${idx + 1}. ${displayName}\n`;
           if (product.mhdList.length > 0) {
             section += `   MHD (${product.mhdList.length}개): ${product.mhdList.join(', ')}\n`;
           } else {
