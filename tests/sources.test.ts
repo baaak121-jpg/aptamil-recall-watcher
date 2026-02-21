@@ -25,7 +25,16 @@ describe('Sources', () => {
     });
 
     it('should have valid parse strategies', () => {
-      const validStrategies = ['HTML_TEXT', 'TABLE_DATES', 'CHECKER_LINK'];
+      const validStrategies = [
+        'HTML_TEXT', 
+        'TABLE_DATES', 
+        'CHECKER_LINK',
+        'URL_CHECK',
+        'LIST_ITEMS',
+        'SECTION_HASH',
+        'CONTENT_KEYWORD',
+        'IMAGE_OCR'
+      ];
       
       for (const source of SOURCES) {
         expect(validStrategies).toContain(source.parse_strategy);

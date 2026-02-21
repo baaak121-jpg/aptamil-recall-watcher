@@ -2,9 +2,8 @@ name: Daily Cron Job
 
 on:
   schedule:
-    # 매일 오전 7시 KST = 22:00 UTC (전날)
-    # 실제 테스트 결과 1시간 늦게 실행되어 21:00 UTC로 조정
-    - cron: '0 21 * * *'
+    # 매일 오전 8시 KST = 23:00 UTC (전날)
+    - cron: '0 23 * * *'
   workflow_dispatch: # 수동 실행 가능
 
 jobs:

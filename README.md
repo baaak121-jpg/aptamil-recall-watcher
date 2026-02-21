@@ -4,14 +4,16 @@ Telegram 봇 기반 Aptamil 분유 리콜 모니터링 시스템. 매일 공식 
 
 ## 주요 기능
 
-- ✅ 텔레그램 그룹 채팅방으로 매일 09:00 KST 자동 리포트 전송
+- ✅ 텔레그램 그룹 채팅방으로 매일 08:00 KST 자동 리포트 전송
 - ✅ Aptamil 제품 모델 + MHD 등록/관리
 - ✅ 4개국 공식 소스 모니터링 (DE, UK, IE, KR)
 - ✅ 국가별 Tier 1 소스 자동 스캔 (공식/규제기관/공식 스토어)
-- ✅ Exact match 기반 보수적 매칭
+- ✅ **IMAGE_OCR**: Vision API로 이미지 기반 제조일자 추출 (KR, 압타밀 프로푸트라)
+- ✅ **제품명 + 날짜 조합 매칭**: 한글 제품명을 영어 키로 변환 후 해당 제품의 MHD만 비교
 - ✅ 변경 감지 시 LLM 기반 3줄 요약
 - ✅ 위험도 라벨링 (INFO/WATCH/ACTION)
 - ✅ 국가별 결과 섹션 포함
+- ✅ `/report` 명령어로 즉시 확인 (IMAGE_OCR 실행)
 
 ## 기술 스택
 
@@ -220,6 +222,7 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/deleteWebhook"
 | `/list` | 등록된 제품 목록 보기 |
 | `/remove <번호\|ID>` | 제품 삭제 |
 | `/sources` | 모니터링 소스 확인 |
+| `/report` | 즉시 리포트 생성 (IMAGE_OCR 실행) |
 | `/help` | 도움말 |
 
 ## 데일리 리포트 형식
@@ -294,8 +297,12 @@ npm test
 1. **FSAI**: `https://www.fsai.ie/news_centre/food_alerts.html`
 
 ### 🇰🇷 한국 (KR)
-1. **NutriciaStore Korea**: `https://www.nutriciastore.co.kr/board/notice`
-2. **MFDS (Tier 2)**: `https://www.mfds.go.kr/brd/m_99/list.do` (참고 링크만)
+1. **압타밀 안심 프로그램 (IMAGE_OCR)**: `https://www.nutriciastore.co.kr/main/html.php?htmid=mypage/aptamil_program.html`
+   - Vision API (gpt-4o)로 이미지 속 제품명과 MHD 추출
+   - 한글 제품명을 영어 키로 자동 매칭 (`PRODUCT_NAME_MAPPING`)
+   - 제품명 + 날짜 조합으로 정확한 매칭
+2. **NutriciaStore Korea**: `https://www.nutriciastore.co.kr/board/list.php?bdId=notice`
+3. **MFDS (Tier 2)**: `https://www.mfds.go.kr/brd/m_99/list.do` (참고 링크만)
 
 **중요**: 실제 배포 전에 `src/sources.ts`에서 정확한 URL을 확인하고 업데이트해야 합니다.
 

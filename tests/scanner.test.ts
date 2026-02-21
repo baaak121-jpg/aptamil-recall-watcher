@@ -12,6 +12,12 @@ jest.mock('../src/store', () => ({
   addNoticeSnapshot: jest.fn(),
 }));
 
+// Mock llm
+jest.mock('../src/llm', () => ({
+  extractTextFromImages: jest.fn().mockResolvedValue(['Mocked OCR text']),
+  generateSummary: jest.fn().mockResolvedValue('Mocked summary'),
+}));
+
 describe('Scanner', () => {
   beforeEach(() => {
     jest.clearAllMocks();

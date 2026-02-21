@@ -2,20 +2,23 @@
 
 ## v1 완료 항목
 
-- [x] 텔레그램 봇 명령어 구현 (/setup, /add, /list, /remove, /sources, /help)
+- [x] 텔레그램 봇 명령어 구현 (/setup, /add, /list, /remove, /sources, /help, /report)
 - [x] Vercel KV 저장소 구현
 - [x] 소스 스캔 및 변경 감지 (해시 기반)
 - [x] 날짜 추출 파서 (DD-MM-YYYY, DD.MM.YYYY, DD/MM/YYYY)
-- [x] Exact match 매칭 로직
+- [x] 제품명 + 날짜 조합 매칭 로직 (IMAGE_OCR용)
 - [x] LLM 기반 3줄 요약 (변경 시에만)
 - [x] 위험도 라벨링 (INFO/WATCH/ACTION)
 - [x] 데일리 리포트 포맷팅 및 전송
-- [x] Vercel 크론 설정 (09:00 KST)
+- [x] Vercel 크론 설정 (08:00 KST)
 - [x] 단위 테스트 (parser, scanner)
 - [x] 국가별 소스 확장 (DE, UK, IE, KR)
 - [x] Tier 1/2 소스 구분
 - [x] 국가별 결과 섹션 추가
-- [x] 파싱 전략 정의 (HTML_TEXT, TABLE_DATES, CHECKER_LINK)
+- [x] 파싱 전략 정의 (HTML_TEXT, TABLE_DATES, CHECKER_LINK, IMAGE_OCR)
+- [x] IMAGE_OCR 전략 구현 (Vision API, gpt-4o)
+- [x] 한글-영어 제품명 매핑 (PRODUCT_NAME_MAPPING)
+- [x] 압타밀 프로푸트라 제품군 OCR 추출 및 매칭
 
 ## v2 보안 개선
 
@@ -111,6 +114,7 @@
 - [x] FSAI: `https://www.fsai.ie/news_centre/food_alerts.html`
 
 ### 한국 (KR)
+- [x] 압타밀 안심 프로그램 (IMAGE_OCR): `https://www.nutriciastore.co.kr/main/html.php?htmid=mypage/aptamil_program.html`
 - [x] NutriciaStore Korea: `https://www.nutriciastore.co.kr/board/notice`
 - [x] MFDS (Tier 2): `https://www.mfds.go.kr/brd/m_99/list.do`
 

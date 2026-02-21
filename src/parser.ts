@@ -174,3 +174,49 @@ export function countKeywordMatches(text: string, keywords: string[]): number {
   const lowerText = text.toLowerCase();
   return keywords.filter(keyword => lowerText.includes(keyword.toLowerCase())).length;
 }
+
+/**
+ * HTML에서 이미지 URL 추출 (IMAGE_OCR 전략용)
+ */
+export function extractImageUrls(html: string, selector?: string): string[] {
+  const $ = cheerio.load(html);
+  const imageUrls: string[] = [];
+  
+  // selector가 있으면 해당 선택자 사용, 없으면 모든 img 태그
+  const imgElements = selector ? $(selector) : $('img');
+  
+  imgElements.each((_, elem) => {
+    const src = $(elem).attr('src');
+    if (src && !src.startsWith('data:')) {
+      // 절대 URL로 변환
+      if (src.startsWith('http')) {
+        imageUrls.push(src);
+      } else if (src.startsWith('/')) {
+        // 상대 경로 처리는 호출자가 baseUrl 제공 시 처리
+        imageUrls.push(src);
+      }
+    }
+  });
+  
+  return imageUrls;
+}
+
+/**
+ * 상대 경로를 절대 URL로 변환
+ */
+export function resolveImageUrl(imageUrl: string, baseUrl: string): string {
+  if (imageUrl.startsWith('http')) {
+    return imageUrl;
+  }
+  
+  try {
+    const base = new URL(baseUrl);
+    if (imageUrl.startsWith('/')) {
+      return `${base.origin}${imageUrl}`;
+    } else {
+      return new URL(imageUrl, baseUrl).toString();
+    }
+  } catch {
+    return imageUrl;
+  }
+}

@@ -8,16 +8,21 @@ import {
   extractLinks,
   selectSectionByHeading,
   filterByKeywords,
-  countKeywordMatches
+  countKeywordMatches,
+  extractImageUrls,
+  resolveImageUrl
 } from './parser';
 import { updateSource, addNoticeSnapshot } from './store';
+import { extractTextFromImages } from './llm';
+import { matchOcrResults } from './matcher';
 
 /**
  * 단일 소스 스캔 (fetch -> normalize -> hash -> compare -> parse)
  */
 export async function scanSource(
   source: Source,
-  registeredItems: RegisteredItem[]
+  registeredItems: RegisteredItem[],
+  forceOcr: boolean = false
 ): Promise<ScanResult> {
   try {
     // 전략별 분기
@@ -30,6 +35,8 @@ export async function scanSource(
         return await scanSectionHash(source, registeredItems);
       case 'CONTENT_KEYWORD':
         return await scanContentKeyword(source, registeredItems);
+      case 'IMAGE_OCR':
+        return await scanImageOcr(source, registeredItems, forceOcr);
       case 'HTML_TEXT':
       default:
         return await scanHtmlText(source, registeredItems);
@@ -533,14 +540,120 @@ async function scanContentKeyword(
 }
 
 /**
+ * IMAGE_OCR 전략: 이미지 URL 변경 감지 + Vision API OCR
+ */
+async function scanImageOcr(
+  source: Source,
+  registeredItems: RegisteredItem[],
+  forceOcr: boolean = false
+): Promise<ScanResult> {
+  const response = await fetch(source.url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; AptamilRecallWatcher/1.0)',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const html = await response.text();
+  
+  // 이미지 URL 추출
+  const imageUrls = extractImageUrls(html, source.imageSelector);
+  
+  // 절대 URL로 변환
+  const absoluteImageUrls = imageUrls.map(url => resolveImageUrl(url, source.url));
+  
+  console.log(`[Scanner] ${source.source_key}: Found ${absoluteImageUrls.length} images`);
+  
+  // 이미지 URL 리스트로 해시 생성
+  const imageUrlsText = absoluteImageUrls.sort().join('\n');
+  const currentHash = generateHash(imageUrlsText);
+  
+  // 변경 감지
+  const changed = source.last_hash !== null && source.last_hash !== currentHash;
+  
+  // OCR 실행 조건: forceOcr=true OR 변경 감지 OR 첫 실행
+  const shouldRunOcr = forceOcr || changed || source.last_hash === null;
+  
+  console.log(`[Scanner] ${source.source_key}: Changed=${changed}, ForceOCR=${forceOcr}, ShouldRunOCR=${shouldRunOcr}`);
+  
+  let extractedDates: string[] = [];
+  let ocrTexts: string[] = [];
+  let matched: RegisteredItem[] = [];
+  let uncertain: RegisteredItem[] = [];
+  
+  if (shouldRunOcr && absoluteImageUrls.length > 0) {
+    console.log(`[Scanner] ${source.source_key}: Running OCR on ${absoluteImageUrls.length} images`);
+    
+    // Vision API로 OCR 실행
+    ocrTexts = await extractTextFromImages(absoluteImageUrls);
+    
+    // 모든 OCR 결과 합치기
+    const fullOcrText = ocrTexts.join('\n\n---\n\n');
+    
+    // 모든 OCR 결과에서 날짜 추출
+    extractedDates = extractDates(fullOcrText);
+    
+    console.log(`[Scanner] ${source.source_key}: Extracted ${extractedDates.length} dates from OCR`);
+    
+    // 제품명 + 날짜 조합으로 매칭
+    const matchResult = matchOcrResults(fullOcrText, registeredItems);
+    matched = matchResult.matched;
+    uncertain = matchResult.notFound;
+    
+    console.log(`[Scanner] ${source.source_key}: Matched ${matched.length} items, Not found ${uncertain.length} items`);
+  } else {
+    console.log(`[Scanner] ${source.source_key}: Skipping OCR (no change detected)`);
+    matched = [];
+    uncertain = [];
+  }
+  
+  // 소스 업데이트
+  const updatedSource: Source = {
+    ...source,
+    last_hash: currentHash,
+    last_checked_at: new Date().toISOString(),
+  };
+  await updateSource(updatedSource);
+  
+  // 변경 시 스냅샷 저장
+  if (changed || forceOcr) {
+    const snapshot: NoticeSnapshot = {
+      source_key: source.source_key,
+      timestamp: new Date().toISOString(),
+      hash: currentHash,
+      raw_text: ocrTexts.join('\n\n---\n\n').substring(0, 5000),
+      extracted_dates: extractedDates,
+    };
+    await addNoticeSnapshot(snapshot);
+  }
+  
+  return {
+    source_key: source.source_key,
+    source_url: source.url,
+    country_code: source.country_code,
+    tier: source.tier,
+    changed,
+    extracted_dates: extractedDates,
+    matched_items: matched,
+    uncertain_items: uncertain,
+    ocrExecuted: shouldRunOcr,
+    imageUrls: absoluteImageUrls,
+  };
+}
+
+/**
  * 모든 소스 스캔
  */
 export async function scanAllSources(
   sources: Source[],
-  registeredItems: RegisteredItem[]
+  registeredItems: RegisteredItem[],
+  forceOcr: boolean = false
 ): Promise<ScanResult[]> {
   const results = await Promise.all(
-    sources.map((source) => scanSource(source, registeredItems))
+    sources.map((source) => scanSource(source, registeredItems, forceOcr))
   );
   return results;
 }

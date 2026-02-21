@@ -13,6 +13,8 @@ import {
 } from './store';
 import { parseUserDate } from './parser';
 import { v4 as uuidv4 } from 'uuid';
+import { scanSource } from './scanner';
+import { formatDailyReport } from './notifier';
 
 // 간단한 메모리 기반 conversation state (서버리스 환경에서는 제한적이지만 v1은 이것으로 충분)
 const conversationStates = new Map<number, ConversationState>();
@@ -54,7 +56,7 @@ async function handleSetup(bot: TelegramBot, chatId: number): Promise<void> {
   await setGroupChatId(chatId);
   await bot.sendMessage(
     chatId,
-    `✅ 이 그룹이 데일리 리포트 수신 그룹으로 설정되었습니다.\n매일 07:00 KST에 리포트가 전송됩니다.\n\n(Chat ID: ${chatId})`
+    `✅ 이 그룹이 데일리 리포트 수신 그룹으로 설정되었습니다.\n\n매일 08:00 KST에 리포트가 전송됩니다.\n/report 명령어로 즉시 확인도 가능합니다.\n\n(Chat ID: ${chatId})`
   );
 }
 
@@ -156,7 +158,7 @@ async function handleConversation(bot: TelegramBot, msg: Message): Promise<void>
       await addItem(item);
       await bot.sendMessage(
         chatId,
-        `✅ 등록 완료!\n\n모델: ${item.model_label}\nMHD: ${item.mhd}`
+        `✅ 등록 완료!\n\n모델: ${item.model_label}\nMHD: ${item.mhd}\n\n💡 /report 명령어로 현재 리콜 상태를 확인할 수 있습니다.`
       );
       conversationStates.delete(chatId);
     } catch (error) {
@@ -247,22 +249,64 @@ function getCountryFlag(countryCode: string): string {
 }
 
 async function handleReport(bot: TelegramBot, chatId: number): Promise<void> {
-  await bot.sendMessage(chatId, '📊 수동 리포트를 생성 중입니다...');
+  await bot.sendMessage(chatId, '📊 수동 리포트를 생성 중입니다...\n(IMAGE_OCR이 포함되어 20-30초 소요될 수 있습니다)');
   
   try {
-    // 크론 엔드포인트 호출
-    const response = await fetch('https://aptamil-recall-watcher.vercel.app/api/cron', {
-      method: 'POST',
-    });
-    
-    if (response.ok) {
-      await bot.sendMessage(chatId, '✅ 리포트가 전송되었습니다!');
-    } else {
-      await bot.sendMessage(chatId, '❌ 리포트 생성 실패. 잠시 후 다시 시도해주세요.');
-    }
+    // KR 소스 즉시 스캔 (forceOcr=true)
+    await checkKrSourceAfterUpdate(bot, chatId);
   } catch (error) {
-    console.error('[Bot] Error triggering report:', error);
+    console.error('[Bot] Error generating report:', error);
     await bot.sendMessage(chatId, '❌ 오류가 발생했습니다.');
+  }
+}
+
+/**
+ * KR 소스 즉시 스캔 (제품 추가/삭제/수동 리포트 시 호출)
+ */
+async function checkKrSourceAfterUpdate(bot: TelegramBot, chatId: number): Promise<void> {
+  try {
+    const items = await getItems();
+    const sources = await getSources();
+    
+    // KR IMAGE_OCR 소스 찾기
+    const krSource = sources.find(s => s.source_key === 'nutricia_kr_aptamil_program') 
+      || SOURCES.find(s => s.source_key === 'nutricia_kr_aptamil_program');
+    
+    if (!krSource) {
+      await bot.sendMessage(chatId, '⚠️ KR 소스를 찾을 수 없습니다.');
+      return;
+    }
+    
+    // forceOcr=true로 즉시 스캔
+    const result = await scanSource(krSource, items, true);
+    
+    // 결과 메시지 생성
+    let message = '✅ 확인 완료!\n\n';
+    
+    if (result.error) {
+      message += `❌ 스캔 오류: ${result.error}`;
+    } else if (result.matched_items.length > 0) {
+      message += `🚨 *주의: 등록된 제품이 리콜 대상일 수 있습니다!*\n\n`;
+      result.matched_items.forEach(item => {
+        message += `- ${item.model_label} (MHD: ${item.mhd})\n`;
+      });
+      message += `\n🔗 확인: ${krSource.url}`;
+    } else if (result.uncertain_items.length > 0) {
+      message += `⚠️ 확인 필요한 항목이 있습니다.\n\n`;
+      result.uncertain_items.forEach(item => {
+        message += `- ${item.model_label} (MHD: ${item.mhd})\n`;
+      });
+      message += `\n🔗 확인: ${krSource.url}`;
+    } else {
+      message += `✅ 등록된 제품 중 리콜 대상이 없습니다.\n`;
+      message += `📅 추출된 MHD: ${result.extracted_dates.length}개\n`;
+      message += `🖼️ OCR 실행: ${result.ocrExecuted ? '예' : '아니오'}`;
+    }
+    
+    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+  } catch (error) {
+    console.error('[Bot] Error checking KR source:', error);
+    await bot.sendMessage(chatId, `⚠️ 확인 중 오류 발생: ${error}`);
   }
 }
 
@@ -277,13 +321,14 @@ async function handleHelp(bot: TelegramBot, chatId: number): Promise<void> {
 /list - 등록된 제품 목록 보기
 /remove <번호|ID> - 제품 삭제
 /sources - 모니터링 소스 확인
-/report - 즉시 리포트 생성 (수동)
+/report - 즉시 리포트 생성 (IMAGE_OCR 실행)
 /help - 도움말
 
 *작동 방식*:
-- 매일 07:00 KST에 공식 소스를 스캔합니다.
+- 매일 08:00 KST에 공식 소스를 스캔합니다.
 - 변경 사항이 없어도 데일리 리포트를 전송합니다.
 - 등록한 MHD와 일치하는 리콜이 발견되면 ACTION 알림을 받습니다.
+- /report 명령어 시 KR 소스를 즉시 확인합니다 (IMAGE_OCR).
 
 *MHD 입력 형식*: DD-MM-YYYY (예: 15-06-2026)
 `;

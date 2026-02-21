@@ -117,7 +117,21 @@ export const SOURCES: Source[] = [
     last_checked_at: null,
   },
 
-  // ========== KR (한국) - Tier 1 ==========
+  // ========== KR (한국) - Tier 1 (IMAGE_OCR) ==========
+  {
+    source_key: 'nutricia_kr_aptamil_program',
+    country_code: 'KR',
+    tier: 1,
+    url: 'https://www.nutriciastore.co.kr/main/html.php?htmid=mypage/aptamil_program.html',
+    parse_strategy: 'IMAGE_OCR',
+    reliability_label: 'OfficialStore',
+    imageSelector: 'img[src*="/data/editor/board/"]',
+    notes: 'Tier 1: 압타밀 안심 프로그램. 이미지 OCR로 제조일자 추출',
+    last_hash: null,
+    last_checked_at: null,
+  },
+  
+  // ========== KR (한국) - Tier 1 (공지사항 목록) ==========
   {
     source_key: 'nutricia_kr_notice',
     country_code: 'KR',
@@ -164,6 +178,24 @@ export const PRODUCT_MODELS: ProductModel[] = [
   { key: 'lactose_free', label: 'Aptamil Lactose Free' },
   { key: 'pepti', label: 'Aptamil Pepti' },
 ];
+
+// 한글-영어 제품명 매핑 (KR 이미지 OCR용)
+export const PRODUCT_NAME_MAPPING: Record<string, string[]> = {
+  'pronutra_pre': ['압타밀 프로누트라 어드밴스 HMO PRE', '프로누트라 PRE'],
+  'pronutra_1': ['압타밀 프로누트라 어드밴스 HMO 1단계', '프로누트라 1단계', '프로누트라 1'],
+  'pronutra_2': ['압타밀 프로누트라 어드밴스 HMO 2단계', '프로누트라 2단계', '프로누트라 2'],
+  'pronutra_3': ['압타밀 프로누트라 어드밴스 HMO 3단계', '프로누트라 3단계', '프로누트라 3'],
+  'profutura_pre': ['압타밀 프로푸트라 뉴로마인드 PRE', '압타밀 프로푸트라 듀오어드밴스 PRE단계', '프로푸트라 PRE'],
+  'profutura_1': ['압타밀 프로푸트라 뉴로마인드 1단계', '압타밀 프로푸트라 듀오어드밴스 1단계', '프로푸트라 1단계', '프로푸트라 1'],
+  'profutura_2': ['압타밀 프로푸트라 뉴로마인드 2단계', '압타밀 프로푸트라 듀오어드밴스 2단계', '프로푸트라 2단계', '프로푸트라 2'],
+  'profutura_3': ['압타밀 프로푸트라 뉴로마인드 3단계', '압타밀 프로푸트라 듀오어드밴스 3단계', '프로푸트라 3단계', '프로푸트라 3'],
+  'ha_pre': ['압타밀 HA PRE', 'HA PRE단계'],
+  'ha_1': ['압타밀 HA 1단계', 'HA 1'],
+  'ha_2': ['압타밀 HA 2단계', 'HA 2'],
+  'comfort': ['압타밀 컴포트', '컴포트'],
+  'ar': ['압타밀 AR', 'AR'],
+  'pepti': ['압타밀 펩티', '펩티'],
+};
 
 export function getModelByKey(key: string): ProductModel | undefined {
   return PRODUCT_MODELS.find((m) => m.key === key);

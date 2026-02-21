@@ -21,7 +21,8 @@ export type ParseStrategy =
   | 'URL_CHECK'
   | 'LIST_ITEMS'
   | 'SECTION_HASH'
-  | 'CONTENT_KEYWORD';
+  | 'CONTENT_KEYWORD'
+  | 'IMAGE_OCR';
 export type ReliabilityLabel = 'Official' | 'Regulator' | 'OfficialStore';
 
 export interface Source {
@@ -37,6 +38,8 @@ export interface Source {
   // 신규 리콜 감지 옵션
   keywords?: string[];
   sectionHeading?: string;
+  // IMAGE_OCR 전략 옵션
+  imageSelector?: string;
 }
 
 export interface NoticeSnapshot {
@@ -60,6 +63,9 @@ export interface ScanResult {
   // 신규 항목 정보
   newItems?: Array<{ title: string; url: string; dateText?: string }>;
   keywordMatches?: number;
+  // IMAGE_OCR 관련
+  ocrExecuted?: boolean;
+  imageUrls?: string[];
 }
 
 export type RiskLevel = '안전' | '확인필요' | '위험';

@@ -2,6 +2,34 @@
 
 All notable changes to Aptamil Recall Watcher will be documented in this file.
 
+## [1.6.0] - 2026-02-21
+
+### Added
+- **IMAGE_OCR 파싱 전략**: Vision API를 사용한 이미지 OCR 기능
+- **forceOcr 파라미터**: 이미지 변경 여부와 관계없이 강제 OCR 실행 옵션
+- **KR 압타밀 안심 프로그램 소스**: 이미지 기반 제조일자 정보 모니터링
+- **`/report` 명령어 개선**: 즉시 OCR 실행하여 최신 정보 확인
+- **제품 추가/삭제 후 자동 확인**: `/add`, `/remove` 후 KR 소스 즉시 스캔
+
+### Changed
+- **크론 시간 변경**: KST 07:00 → KST 08:00 (UTC 23:00)
+- **OCR 실행 로직**:
+  - 정기 크론: 이미지 URL 변경 시에만 OCR (비용 절감)
+  - 제품 추가/삭제: 항상 OCR 실행 (즉시 확인)
+  - 수동 리포트: 항상 OCR 실행 (사용자 요청)
+- **이미지 다운로드 방식**: base64 인코딩으로 Vision API 타임아웃 문제 해결
+
+### Technical
+- `extractTextFromImage()`: 단일 이미지 OCR (GPT-4o-mini Vision)
+- `extractTextFromImages()`: 여러 이미지 병렬 OCR
+- `extractImageUrls()`: HTML에서 이미지 URL 추출
+- `resolveImageUrl()`: 상대 경로를 절대 URL로 변환
+- `scanImageOcr()`: IMAGE_OCR 전략 구현
+
+### Tests
+- `sources.test.ts`: IMAGE_OCR 전략 검증 추가
+- `scanner.test.ts`: llm 모듈 모킹 추가
+
 ## [1.1.0] - 2026-02-11
 
 ### Added

@@ -19,7 +19,7 @@ export async function generateSummary(
 
   if (changedSources.length === 0) {
     // 변경 없음 -> 고정 문구 (LLM 호출 안 함)
-    return '✅ 변경 사항 없음. 모든 소스가 이전 스캔과 동일합니다.\n✅ 정기 모니터링이 정상적으로 작동 중입니다.\n✅ 다음 스캔은 내일 07:00 KST에 실행됩니다.';
+    return '✅ 변경 사항 없음. 모든 소스가 이전 스캔과 동일합니다.\n✅ 정기 모니터링이 정상적으로 작동 중입니다.\n✅ 다음 스캔은 내일 08:00 KST에 실행됩니다.';
   }
 
   // 변경된 소스 정보 요약 (국가별 그룹화)
@@ -60,6 +60,121 @@ ${sourceInfo}
     console.error('[LLM] Error generating summary:', error);
     return `변경 감지됨 (${changedSources.length}개 소스). LLM 요약 실패.`;
   }
+}
+
+/**
+ * Vision API를 사용한 이미지 OCR (제품 정보 추출)
+ * 이미지를 먼저 다운로드한 후 base64로 인코딩하여 전송
+ */
+export async function extractTextFromImage(imageUrl: string): Promise<string> {
+  try {
+    // 이미지 다운로드
+    const imageResponse = await fetch(imageUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; AptamilRecallWatcher/1.0)',
+      },
+    });
+    
+    if (!imageResponse.ok) {
+      console.error(`[LLM] Failed to download image: ${imageResponse.status}`);
+      return '';
+    }
+    
+    // ArrayBuffer로 변환 후 base64 인코딩
+    const arrayBuffer = await imageResponse.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Image = buffer.toString('base64');
+    
+    // Content-Type 감지
+    const contentType = imageResponse.headers.get('content-type') || 'image/png';
+    const base64Url = `data:${contentType};base64,${base64Image}`;
+    
+    console.log(`[LLM] Image downloaded: ${buffer.length} bytes, type: ${contentType}`);
+    
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `이 이미지에서 **"압타밀 프로푸트라"** 제품만 찾아서 추출하세요.
+
+**작업**:
+1. 이미지에서 "압타밀 프로푸트라" 또는 "Aptamil Profutura" 텍스트가 있는 섹션을 찾으세요
+2. 해당 섹션의 모든 제품을 다음 형식으로 출력:
+
+---
+제품명: [제품명 전체]
+MHD: [날짜1], [날짜2], ...
+---
+
+**출력 예시**:
+---
+제품명: 압타밀 프로푸트라 뉴로마인드 PRE 1단계 800g (독일내수용)
+MHD: 17-12-2026, 15-03-2027, 22-04-2027, 01-06-2027, 22-07-2027, 07-09-2027, 15-09-2027
+---
+---
+제품명: 압타밀 프로푸트라 뉴로마인드 1단계 800g (독일내수용)
+MHD: 21-04-2027, 01-06-2027, 21-07-2027, 07-09-2027, 16-09-2027
+---
+---
+제품명: 압타밀 프로푸트라 뉴로마인드 2단계 800g (독일내수용)
+MHD: 19-01-2027, 16-02-2027, 17-04-2027, 06-06-2027, 27-06-2027, 20-07-2027
+---
+
+**날짜 읽기 - 매우 중요**:
+⚠️ 날짜 형식: DD-MM-YYYY (일-월-년)
+⚠️ 예시:
+   - 이미지에 "01.06.2027" → 출력: "01-06-2027" (6월 1일)
+   - 이미지에 "06.06.2027" → 출력: "06-06-2027" (6월 6일)
+⚠️ 각 날짜를 두 번 확인하세요
+⚠️ 월(MM)과 일(DD)을 절대 혼동하지 마세요
+
+**검증**:
+- 각 날짜를 읽은 후 다시 한 번 확인하세요
+- 의심스러운 날짜는 이미지를 다시 보고 정확히 읽으세요
+
+**중요**:
+- "압타밀 프로푸트라" 제품만 추출하세요 (프로누트라, 탭스 등은 제외)
+- 제품명: 정확히 전체 복사 (단계, 용량, 출처 포함)
+- 프로푸트라 섹션의 모든 제품을 빠짐없이 추출하세요`
+            },
+            {
+              type: 'image_url',
+              image_url: { 
+                url: base64Url,
+                detail: 'high'
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.1,
+    });
+
+    return response.choices[0]?.message?.content?.trim() || '';
+  } catch (error) {
+    console.error('[LLM] Error extracting text from image:', error);
+    return '';
+  }
+}
+
+/**
+ * 여러 이미지를 병렬로 OCR 처리
+ */
+export async function extractTextFromImages(imageUrls: string[]): Promise<string[]> {
+  console.log(`[LLM] Starting OCR for ${imageUrls.length} images`);
+  
+  const results = await Promise.all(
+    imageUrls.map(url => extractTextFromImage(url))
+  );
+  
+  console.log(`[LLM] OCR completed: ${results.filter(r => r).length}/${imageUrls.length} successful`);
+  
+  return results;
 }
 
 // ScanResult 타입 임포트를 위한 참조
