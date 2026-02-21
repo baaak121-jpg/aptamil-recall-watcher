@@ -249,15 +249,140 @@ function getCountryFlag(countryCode: string): string {
 }
 
 async function handleReport(bot: TelegramBot, chatId: number): Promise<void> {
-  await bot.sendMessage(chatId, '📊 수동 리포트를 생성 중입니다...\n(IMAGE_OCR이 포함되어 20-30초 소요될 수 있습니다)');
+  await bot.sendMessage(chatId, '📊 수동 리포트를 생성 중입니다...\n(IMAGE_OCR이 포함되어 30-60초 소요될 수 있습니다)');
   
   try {
-    // KR 소스 즉시 스캔 (forceOcr=true)
-    await checkKrSourceAfterUpdate(bot, chatId);
+    // 전체 스캔 실행 (크론과 동일)
+    await generateFullReport(bot, chatId);
   } catch (error) {
     console.error('[Bot] Error generating report:', error);
-    await bot.sendMessage(chatId, '❌ 오류가 발생했습니다.');
+    await bot.sendMessage(chatId, `❌ 리포트 생성 중 오류 발생: ${error}`);
   }
+}
+
+/**
+ * 전체 리포트 생성 (크론과 동일, IMAGE_OCR 최우선 표기)
+ */
+async function generateFullReport(bot: TelegramBot, chatId: number): Promise<void> {
+  const { getItems, getSources } = await import('../store');
+  const { scanAllSources } = await import('../scanner');
+  const { generateSummary } = await import('../llm');
+  const { sendDailyReport } = await import('../notifier');
+  const { SOURCES } = await import('../sources');
+  
+  try {
+    // 1. 등록된 항목 가져오기
+    const items = await getItems();
+    
+    // 2. 소스 가져오기
+    let sources = await getSources();
+    if (sources.length === 0) {
+      sources = SOURCES;
+    }
+    
+    // 3. KR IMAGE_OCR 소스를 forceOcr=true로 스캔
+    const krOcrSource = sources.find(s => s.source_key === 'nutricia_kr_aptamil_program');
+    const otherSources = sources.filter(s => s.source_key !== 'nutricia_kr_aptamil_program');
+    
+    let allScanResults = [];
+    
+    // KR OCR 소스 먼저 스캔 (forceOcr=true)
+    if (krOcrSource) {
+      const { scanSource } = await import('../scanner');
+      const krResult = await scanSource(krOcrSource, items, true);
+      allScanResults.push(krResult);
+    }
+    
+    // 나머지 소스 스캔
+    const otherResults = await scanAllSources(otherSources, items);
+    allScanResults = [...allScanResults, ...otherResults];
+    
+    // 4. 결과 분석
+    const analysis = analyzeResults(allScanResults, items);
+    
+    // 5. 국가별 결과 생성
+    const countryResults = generateCountryResults(allScanResults, items);
+    
+    // 6. LLM 요약 생성
+    const summary = await generateSummary(
+      allScanResults,
+      analysis.matched_count,
+      analysis.uncertain_count
+    );
+    
+    // 7. 리포트 생성 및 전송
+    const report = {
+      date: new Date().toISOString().split('T')[0],
+      risk_level: analysis.risk_level,
+      changed_sources: analysis.changed_sources,
+      matched_count: analysis.matched_count,
+      uncertain_count: analysis.uncertain_count,
+      unmatched_count: analysis.unmatched_count,
+      summary,
+      source_links: sources.map(s => s.url),
+      matched_items: analysis.matched_items,
+      scan_results: allScanResults,
+      country_results: countryResults,
+    };
+    
+    await sendDailyReport(bot, chatId, report);
+    
+  } catch (error) {
+    console.error('[Bot] Error generating full report:', error);
+    throw error;
+  }
+}
+
+function analyzeResults(scanResults: any[], allItems: any[]): any {
+  const changedSources = scanResults.filter((r) => r.changed).length;
+  const allMatched = scanResults.flatMap((r) => r.matched_items);
+  const allUncertain = scanResults.flatMap((r) => r.uncertain_items);
+
+  const matched_count = allMatched.length;
+  const uncertain_count = allUncertain.length;
+  const unmatched_count = allItems.length - matched_count - uncertain_count;
+
+  let risk_level = '안전';
+  if (matched_count > 0) {
+    risk_level = '위험';
+  } else if (changedSources > 0 || uncertain_count > 0) {
+    risk_level = '확인필요';
+  }
+
+  return {
+    risk_level,
+    changed_sources: changedSources,
+    matched_count,
+    uncertain_count,
+    unmatched_count,
+    matched_items: allMatched,
+  };
+}
+
+function generateCountryResults(scanResults: any[], allItems: any[]): any[] {
+  const { getTier1LinksByCountry } = require('../sources');
+  const countries = ['DE', 'UK', 'IE', 'KR'];
+  const results = [];
+
+  for (const countryCode of countries) {
+    const countryScans = scanResults.filter((r) => r.country_code === countryCode);
+    if (countryScans.length === 0) continue;
+
+    const changed = countryScans.some((r) => r.changed);
+    const matched = countryScans.flatMap((r) => r.matched_items);
+    const uncertain = countryScans.flatMap((r) => r.uncertain_items);
+
+    results.push({
+      country_code: countryCode,
+      changed,
+      matched_count: matched.length,
+      uncertain_count: uncertain.length,
+      unmatched_count: allItems.length - matched.length - uncertain.length,
+      tier1_links: getTier1LinksByCountry(countryCode),
+    });
+  }
+
+  return results;
 }
 
 /**

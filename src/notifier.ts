@@ -14,6 +14,9 @@ export function formatDailyReport(report: DailyReport): string {
   const changeLine = `🔄 변경 감지: ${report.changed_sources > 0 ? '있음' : '없음'}\n`;
   const matchLine = `🍼 내 제품 MHD 이슈사항 여부:\n해당 ${report.matched_count}개 / 확인필요 ${report.uncertain_count}개 / 미해당 ${report.unmatched_count}개\n`;
 
+  // IMAGE_OCR 결과 최우선 표기
+  const ocrSection = formatOcrResults(report.scan_results);
+
   // 국가별 결과 섹션
   const countrySection = formatCountryResults(report.country_results);
 
@@ -55,11 +58,45 @@ export function formatDailyReport(report: DailyReport): string {
     riskLine +
     changeLine +
     matchLine +
+    ocrSection +
     countrySection +
     summarySection +
     linksSection +
     actionSection
   );
+}
+
+/**
+ * IMAGE_OCR 결과 포맷팅 (최우선 표기)
+ */
+function formatOcrResults(scanResults: any[]): string {
+  const ocrResult = scanResults.find(r => r.source_key === 'nutricia_kr_aptamil_program');
+  
+  if (!ocrResult) return '';
+  
+  let section = `\n🖼️ IMAGE_OCR 결과 (KR 압타밀 안심 프로그램):\n`;
+  
+  if (ocrResult.error) {
+    section += `❌ OCR 오류: ${ocrResult.error}\n`;
+  } else {
+    section += `✅ OCR 실행: ${ocrResult.ocrExecuted ? '예' : '아니오'}\n`;
+    section += `📅 추출된 MHD: ${ocrResult.extracted_dates?.length || 0}개\n`;
+    
+    if (ocrResult.matched_items.length > 0) {
+      section += `🚨 매칭된 제품: ${ocrResult.matched_items.length}개\n`;
+      ocrResult.matched_items.forEach((item: any) => {
+        section += `   • ${item.model_key} (MHD: ${item.mhd})\n`;
+      });
+    } else if (ocrResult.uncertain_items.length > 0) {
+      section += `⚠️ 확인 필요: ${ocrResult.uncertain_items.length}개\n`;
+    } else {
+      section += `✅ 등록된 제품 중 리콜 대상 없음\n`;
+    }
+    
+    section += `🔗 ${ocrResult.source_url}\n`;
+  }
+  
+  return section;
 }
 
 /**
