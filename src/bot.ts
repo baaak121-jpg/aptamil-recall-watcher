@@ -264,11 +264,11 @@ async function handleReport(bot: TelegramBot, chatId: number): Promise<void> {
  * 전체 리포트 생성 (크론과 동일, IMAGE_OCR 최우선 표기)
  */
 async function generateFullReport(bot: TelegramBot, chatId: number): Promise<void> {
-  const { getItems, getSources } = await import('../store');
-  const { scanAllSources } = await import('../scanner');
-  const { generateSummary } = await import('../llm');
-  const { sendDailyReport } = await import('../notifier');
-  const { SOURCES } = await import('../sources');
+  const { getItems, getSources } = await import('./store');
+  const { scanAllSources, scanSource } = await import('./scanner');
+  const { generateSummary } = await import('./llm');
+  const { sendDailyReport } = await import('./notifier');
+  const { SOURCES, getTier1LinksByCountry } = await import('./sources');
   
   try {
     // 1. 등록된 항목 가져오기
@@ -281,14 +281,13 @@ async function generateFullReport(bot: TelegramBot, chatId: number): Promise<voi
     }
     
     // 3. KR IMAGE_OCR 소스를 forceOcr=true로 스캔
-    const krOcrSource = sources.find(s => s.source_key === 'nutricia_kr_aptamil_program');
-    const otherSources = sources.filter(s => s.source_key !== 'nutricia_kr_aptamil_program');
+    const krOcrSource = sources.find((s: any) => s.source_key === 'nutricia_kr_aptamil_program');
+    const otherSources = sources.filter((s: any) => s.source_key !== 'nutricia_kr_aptamil_program');
     
     let allScanResults = [];
     
     // KR OCR 소스 먼저 스캔 (forceOcr=true)
     if (krOcrSource) {
-      const { scanSource } = await import('../scanner');
       const krResult = await scanSource(krOcrSource, items, true);
       allScanResults.push(krResult);
     }
@@ -301,7 +300,7 @@ async function generateFullReport(bot: TelegramBot, chatId: number): Promise<voi
     const analysis = analyzeResults(allScanResults, items);
     
     // 5. 국가별 결과 생성
-    const countryResults = generateCountryResults(allScanResults, items);
+    const countryResults = await generateCountryResults(allScanResults, items);
     
     // 6. LLM 요약 생성
     const summary = await generateSummary(
@@ -333,6 +332,9 @@ async function generateFullReport(bot: TelegramBot, chatId: number): Promise<voi
   }
 }
 
+/**
+ * 스캔 결과 분석
+ */
 function analyzeResults(scanResults: any[], allItems: any[]): any {
   const changedSources = scanResults.filter((r) => r.changed).length;
   const allMatched = scanResults.flatMap((r) => r.matched_items);
@@ -359,18 +361,21 @@ function analyzeResults(scanResults: any[], allItems: any[]): any {
   };
 }
 
-function generateCountryResults(scanResults: any[], allItems: any[]): any[] {
-  const { getTier1LinksByCountry } = require('../sources');
+/**
+ * 국가별 결과 생성
+ */
+async function generateCountryResults(scanResults: any[], allItems: any[]): Promise<any[]> {
+  const { getTier1LinksByCountry } = await import('./sources');
   const countries = ['DE', 'UK', 'IE', 'KR'];
   const results = [];
 
   for (const countryCode of countries) {
-    const countryScans = scanResults.filter((r) => r.country_code === countryCode);
+    const countryScans = scanResults.filter((r: any) => r.country_code === countryCode);
     if (countryScans.length === 0) continue;
 
-    const changed = countryScans.some((r) => r.changed);
-    const matched = countryScans.flatMap((r) => r.matched_items);
-    const uncertain = countryScans.flatMap((r) => r.uncertain_items);
+    const changed = countryScans.some((r: any) => r.changed);
+    const matched = countryScans.flatMap((r: any) => r.matched_items);
+    const uncertain = countryScans.flatMap((r: any) => r.uncertain_items);
 
     results.push({
       country_code: countryCode,
