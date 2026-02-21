@@ -17,9 +17,6 @@ export function formatDailyReport(report: DailyReport): string {
   // IMAGE_OCR 결과 최우선 표기
   const ocrSection = formatOcrResults(report.scan_results);
 
-  // 국가별 결과 섹션
-  const countrySection = formatCountryResults(report.country_results);
-
   const summarySection = `\n📝 요약:\n${report.summary}\n`;
 
   // 즉시 확인 필요 섹션 (매칭 + 확인필요 포함)
@@ -34,7 +31,6 @@ export function formatDailyReport(report: DailyReport): string {
     changeLine +
     matchLine +
     ocrSection +
-    countrySection +
     summarySection +
     actionSection +
     linksSection

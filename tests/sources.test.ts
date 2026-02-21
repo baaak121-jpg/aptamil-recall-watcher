@@ -4,24 +4,15 @@ import { SOURCES, getTier1Sources, getSourcesByCountry, getTier1LinksByCountry }
 
 describe('Sources', () => {
   describe('SOURCES array', () => {
-    it('should have sources for all countries', () => {
-      const countries = ['DE', 'UK', 'IE', 'KR'];
-      
-      for (const country of countries) {
-        const countrySources = SOURCES.filter((s) => s.country_code === country);
-        expect(countrySources.length).toBeGreaterThan(0);
-      }
+    it('should have KR source only', () => {
+      expect(SOURCES.length).toBe(1);
+      expect(SOURCES[0].country_code).toBe('KR');
     });
 
-    it('should have at least one Tier 1 source per country', () => {
-      const countries = ['DE', 'UK', 'IE', 'KR'];
-      
-      for (const country of countries) {
-        const tier1Sources = SOURCES.filter(
-          (s) => s.country_code === country && s.tier === 1
-        );
-        expect(tier1Sources.length).toBeGreaterThanOrEqual(1);
-      }
+    it('should have IMAGE_OCR strategy for KR', () => {
+      const krSource = SOURCES.find((s) => s.country_code === 'KR');
+      expect(krSource).toBeDefined();
+      expect(krSource?.parse_strategy).toBe('IMAGE_OCR');
     });
 
     it('should have valid parse strategies', () => {
@@ -49,121 +40,75 @@ describe('Sources', () => {
       }
     });
 
+    it('should have valid URLs', () => {
+      for (const source of SOURCES) {
+        expect(source.url).toMatch(/^https?:\/\//);
+      }
+    });
+
     it('should have unique source keys', () => {
       const keys = SOURCES.map((s) => s.source_key);
       const uniqueKeys = new Set(keys);
       expect(keys.length).toBe(uniqueKeys.size);
     });
+
+    it('should have non-empty notes', () => {
+      for (const source of SOURCES) {
+        expect(source.notes).toBeTruthy();
+        expect(source.notes?.length).toBeGreaterThan(0);
+      }
+    });
   });
 
   describe('getTier1Sources', () => {
-    it('should return only Tier 1 sources', () => {
+    it('should have 1 Tier 1 source (KR only)', () => {
       const tier1 = getTier1Sources();
-      
-      expect(tier1.length).toBeGreaterThan(0);
-      for (const source of tier1) {
-        expect(source.tier).toBe(1);
-      }
-    });
-
-    it('should have at least 4 Tier 1 sources (one per country)', () => {
-      const tier1 = getTier1Sources();
-      expect(tier1.length).toBeGreaterThanOrEqual(4);
+      expect(tier1.length).toBe(1);
+      expect(tier1[0].country_code).toBe('KR');
     });
   });
 
   describe('getSourcesByCountry', () => {
-    it('should return sources for DE', () => {
-      const deSources = getSourcesByCountry('DE');
-      expect(deSources.length).toBeGreaterThan(0);
-      
-      for (const source of deSources) {
-        expect(source.country_code).toBe('DE');
-      }
-    });
-
-    it('should return sources for UK', () => {
-      const ukSources = getSourcesByCountry('UK');
-      expect(ukSources.length).toBeGreaterThan(0);
-      
-      for (const source of ukSources) {
-        expect(source.country_code).toBe('UK');
-      }
-    });
-
-    it('should return sources for IE', () => {
-      const ieSources = getSourcesByCountry('IE');
-      expect(ieSources.length).toBeGreaterThan(0);
-      
-      for (const source of ieSources) {
-        expect(source.country_code).toBe('IE');
-      }
-    });
-
     it('should return sources for KR', () => {
       const krSources = getSourcesByCountry('KR');
-      expect(krSources.length).toBeGreaterThan(0);
-      
-      for (const source of krSources) {
-        expect(source.country_code).toBe('KR');
-      }
+      expect(krSources.length).toBe(1);
+      expect(krSources[0].country_code).toBe('KR');
     });
 
-    it('should return empty array for unknown country', () => {
-      const unknownSources = getSourcesByCountry('XX');
-      expect(unknownSources).toEqual([]);
+    it('should return empty array for other countries', () => {
+      expect(getSourcesByCountry('DE')).toEqual([]);
+      expect(getSourcesByCountry('UK')).toEqual([]);
+      expect(getSourcesByCountry('IE')).toEqual([]);
+      expect(getSourcesByCountry('XX')).toEqual([]);
     });
   });
 
   describe('getTier1LinksByCountry', () => {
-    it('should return Tier 1 links for DE', () => {
-      const deLinks = getTier1LinksByCountry('DE');
-      expect(deLinks.length).toBeGreaterThan(0);
-      
-      for (const link of deLinks) {
-        expect(link).toContain('http');
-      }
-    });
-
-    it('should return Tier 1 links for UK', () => {
-      const ukLinks = getTier1LinksByCountry('UK');
-      expect(ukLinks.length).toBeGreaterThan(0);
-    });
-
-    it('should return Tier 1 links for IE', () => {
-      const ieLinks = getTier1LinksByCountry('IE');
-      expect(ieLinks.length).toBeGreaterThan(0);
-    });
-
     it('should return Tier 1 links for KR', () => {
       const krLinks = getTier1LinksByCountry('KR');
-      expect(krLinks.length).toBeGreaterThan(0);
+      expect(krLinks.length).toBe(1);
+      expect(krLinks[0]).toContain('http');
+      expect(krLinks[0]).toContain('nutriciastore.co.kr');
+    });
+
+    it('should return empty array for other countries', () => {
+      expect(getTier1LinksByCountry('DE')).toEqual([]);
+      expect(getTier1LinksByCountry('UK')).toEqual([]);
+      expect(getTier1LinksByCountry('IE')).toEqual([]);
     });
   });
 
   describe('Country coverage', () => {
-    it('should have DE sources with Official reliability', () => {
-      const deSources = getSourcesByCountry('DE');
-      const officialSources = deSources.filter((s) => s.reliability_label === 'Official');
-      expect(officialSources.length).toBeGreaterThan(0);
-    });
-
-    it('should have UK sources with Regulator reliability', () => {
-      const ukSources = getSourcesByCountry('UK');
-      const regulatorSources = ukSources.filter((s) => s.reliability_label === 'Regulator');
-      expect(regulatorSources.length).toBeGreaterThan(0);
-    });
-
-    it('should have IE sources with Regulator reliability', () => {
-      const ieSources = getSourcesByCountry('IE');
-      const regulatorSources = ieSources.filter((s) => s.reliability_label === 'Regulator');
-      expect(regulatorSources.length).toBeGreaterThan(0);
-    });
-
-    it('should have KR sources with OfficialStore reliability', () => {
+    it('should have KR source with OfficialStore reliability', () => {
       const krSources = getSourcesByCountry('KR');
-      const storeSources = krSources.filter((s) => s.reliability_label === 'OfficialStore');
-      expect(storeSources.length).toBeGreaterThan(0);
+      expect(krSources.length).toBe(1);
+      expect(krSources[0].reliability_label).toBe('OfficialStore');
+    });
+
+    it('should have KR source with IMAGE_OCR strategy', () => {
+      const krSources = getSourcesByCountry('KR');
+      expect(krSources.length).toBe(1);
+      expect(krSources[0].parse_strategy).toBe('IMAGE_OCR');
     });
   });
 });

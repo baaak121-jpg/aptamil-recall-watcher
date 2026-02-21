@@ -366,7 +366,7 @@ function analyzeResults(scanResults: any[], allItems: any[]): any {
  */
 async function generateCountryResults(scanResults: any[], allItems: any[]): Promise<any[]> {
   const { getTier1LinksByCountry } = await import('./sources');
-  const countries = ['DE', 'UK', 'IE', 'KR']; // KR은 포함하지만 notifier에서 필터링됨
+  const countries = ['KR']; // KR만 모니터링
   const results = [];
 
   for (const countryCode of countries) {
