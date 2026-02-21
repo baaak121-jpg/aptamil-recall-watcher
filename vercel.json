@@ -3,11 +3,17 @@
   "functions": {
     "api/telegram.ts": {
       "memory": 1024,
-      "maxDuration": 10
+      "maxDuration": 60
     },
     "api/cron.ts": {
       "memory": 1024,
       "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron",
+      "schedule": "0 23 * * *"
+    }
+  ]
 }
