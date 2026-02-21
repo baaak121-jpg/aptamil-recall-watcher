@@ -286,7 +286,7 @@ async function checkKrSourceAfterUpdate(bot: TelegramBot, chatId: number): Promi
     if (result.error) {
       message += `❌ 스캔 오류: ${result.error}`;
     } else if (result.matched_items.length > 0) {
-      message += `🚨 *주의: 등록된 제품이 리콜 대상일 수 있습니다!*\n\n`;
+      message += `🚨 주의: 등록된 제품이 리콜 대상일 수 있습니다!\n\n`;
       result.matched_items.forEach(item => {
         message += `- ${item.model_label} (MHD: ${item.mhd})\n`;
       });
@@ -303,7 +303,7 @@ async function checkKrSourceAfterUpdate(bot: TelegramBot, chatId: number): Promi
       message += `🖼️ OCR 실행: ${result.ocrExecuted ? '예' : '아니오'}`;
     }
     
-    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, message);
   } catch (error) {
     console.error('[Bot] Error checking KR source:', error);
     await bot.sendMessage(chatId, `⚠️ 확인 중 오류 발생: ${error}`);
