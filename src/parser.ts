@@ -37,7 +37,7 @@ export function extractDates(text: string): string[] {
     /\b(\d{4})[-./](\d{2})[-./](\d{2})\b/g,
   ];
 
-  const dates = new Set<string>();
+  const dates: string[] = [];
 
   for (const pattern of patterns) {
     let match;
@@ -58,12 +58,12 @@ export function extractDates(text: string): string[] {
 
       // 유효성 검증
       if (isValidDate(normalized)) {
-        dates.add(normalized);
+        dates.push(normalized);
       }
     }
   }
 
-  return Array.from(dates);
+  return dates;
 }
 
 /**
