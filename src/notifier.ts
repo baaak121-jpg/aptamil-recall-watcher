@@ -100,14 +100,17 @@ function formatOcrResults(scanResults: any[]): string {
 }
 
 /**
- * 국가별 결과 포맷팅
+ * 국가별 결과 포맷팅 (KR 제외)
  */
 function formatCountryResults(countryResults: CountryResult[]): string {
-  if (countryResults.length === 0) return '';
+  // KR은 IMAGE_OCR 섹션에서만 표기하므로 제외
+  const filteredResults = countryResults.filter(r => r.country_code !== 'KR');
+  
+  if (filteredResults.length === 0) return '';
 
   let section = `\n🌍 국가별 결과:\n`;
 
-  for (const result of countryResults) {
+  for (const result of filteredResults) {
     const flag = getCountryFlag(result.country_code);
     const changeStatus = result.changed ? '변경 감지' : '변경 없음';
     const counts = `해당 ${result.matched_count} / 확인필요 ${result.uncertain_count}`;

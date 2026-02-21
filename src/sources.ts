@@ -7,50 +7,23 @@ import { ProductModel, Source } from './types';
  * 원칙: 공식/규제기관/공식 스토어 우선, 국가별 최소 1~3개
  */
 export const SOURCES: Source[] = [
-  // ========== DE (독일) - Tier 1 ==========
-  // 정부 공식 소스 (신규 추가)
+  // ========== DE (독일) ==========
   {
-    source_key: 'lebensmittelwarnung_de',
+    source_key: 'danone_de_brand_news',
     country_code: 'DE',
     tier: 1,
-    url: 'https://www.lebensmittelwarnung.de/bvl-lmw-de/liste/alle/deutschlandweit/10/0',
+    url: 'https://www.danone.de/newsroom/brand-news.html',
     parse_strategy: 'LIST_ITEMS',
-    reliability_label: 'Regulator',
-    keywords: ['aptamil', 'milumil', 'säuglingsnahrung'],
-    notes: 'Tier 1: 독일 정부 식품 경고 시스템. 목록에서 신규 항목 감지',
-    last_hash: null,
-    last_checked_at: null,
-  },
-  
-  // ========== DE (독일) - Tier 1 (실제 리콜 페이지) ==========
-  {
-    source_key: 'danone_de_recall',
-    country_code: 'DE',
-    tier: 1,
-    url: 'https://www.danone.de/newsroom/press-releases-list/rueckruf-vereinzelter-aptamil-chargen-de.html',
-    parse_strategy: 'HTML_TEXT',
     reliability_label: 'Official',
-    keywords: ['aptamil', 'profutura', 'pronutra', 'rückruf'],
-    notes: 'Tier 1: 실제 리콜 공지 페이지. 키워드 필터 + 해시 비교',
-    last_hash: null,
-    last_checked_at: null,
-  },
-  {
-    source_key: 'aptaclub_de_statement',
-    country_code: 'DE',
-    tier: 1,
-    url: 'https://www.aptaclub.de/stellungnahme.html',
-    parse_strategy: 'HTML_TEXT',
-    reliability_label: 'Official',
-    keywords: ['aptamil', 'profutura', 'pronutra', 'rückruf'],
-    notes: 'Tier 1: 공식 성명서. 키워드 필터 + 해시 비교',
+    keywords: ['aptamil', 'profutura', 'pronutra', 'rückruf', 'recall'],
+    notes: '목록의 새 링크 발견 시 상세 페이지 본문 수집',
     last_hash: null,
     last_checked_at: null,
   },
 
-  // ========== UK (영국) - Tier 1 ==========
+  // ========== UK (영국) ==========
   {
-    source_key: 'fsa_uk_hub',
+    source_key: 'fsa_uk_infant_formula_recalls',
     country_code: 'UK',
     tier: 1,
     url: 'https://www.food.gov.uk/safety-hygiene/infant-formula-recalls',
@@ -58,66 +31,38 @@ export const SOURCES: Source[] = [
     reliability_label: 'Regulator',
     sectionHeading: 'Affected products',
     keywords: ['aptamil', 'cow & gate', 'cow and gate'],
-    notes: 'Tier 1: FSA 분유 리콜 허브. "Affected products" 섹션만 감시',
+    notes: 'Revision log 및 제품 목록 표의 해시 값 비교',
     last_hash: null,
     last_checked_at: null,
   },
   {
-    source_key: 'fsa_uk_news_alerts',
+    source_key: 'fsa_uk_search_aptamil',
     country_code: 'UK',
     tier: 1,
-    url: 'https://www.food.gov.uk/news-alerts/search/alerts',
+    url: 'https://www.food.gov.uk/search?keywords=aptamil',
     parse_strategy: 'LIST_ITEMS',
     reliability_label: 'Regulator',
-    keywords: ['aptamil', 'cow & gate', 'cow and gate', 'infant formula', 'danone'],
-    notes: 'Tier 1: FSA 뉴스 알럿 목록. 신규 항목 감지',
-    last_hash: null,
-    last_checked_at: null,
-  },
-  
-  // ========== UK (영국) - Tier 1 (증거용) ==========
-  {
-    source_key: 'fsa_uk_alert_example',
-    country_code: 'UK',
-    tier: 1,
-    url: 'https://www.food.gov.uk/news-alerts/alert/fsa-prin-05-2026',
-    parse_strategy: 'CONTENT_KEYWORD',
-    reliability_label: 'Regulator',
-    keywords: ['aptamil', 'cow & gate', 'recall'],
-    notes: 'Tier 2: 개별 알럿 예시. 증거용',
+    keywords: ['aptamil', 'recall', 'infant formula'],
+    notes: '첫 페이지 전체 결과(URL 리스트)의 차이점 비교',
     last_hash: null,
     last_checked_at: null,
   },
 
-  // ========== IE (아일랜드) - Tier 1 ==========
+  // ========== IE (아일랜드) ==========
   {
-    source_key: 'fsai_ie_food_alerts',
+    source_key: 'fsai_ie_aptamil_alerts',
     country_code: 'IE',
     tier: 1,
-    url: 'https://www.fsai.ie/news-alerts/food',
+    url: 'https://www.fsai.ie/news-and-alerts/food-alerts?keyword=aptamil&sort=desc&fromDate=&toDate=',
     parse_strategy: 'LIST_ITEMS',
     reliability_label: 'Regulator',
-    keywords: ['aptamil', 'cow gate', 'danone', 'infant formula'],
-    notes: 'Tier 1: FSAI 식품 알럿 목록. 신규 항목 감지',
-    last_hash: null,
-    last_checked_at: null,
-  },
-  
-  // ========== IE (아일랜드) - Tier 1 (증거용) ==========
-  {
-    source_key: 'fsai_ie_alert_example',
-    country_code: 'IE',
-    tier: 1,
-    url: 'https://www.fsai.ie/news-and-alerts/food-alerts/danone-recall-of-batches-of-aptamil-and-cow-gate-i',
-    parse_strategy: 'CONTENT_KEYWORD',
-    reliability_label: 'Regulator',
-    keywords: ['aptamil', 'cow gate', 'recall'],
-    notes: 'Tier 2: 개별 알럿 예시. 증거용',
+    keywords: ['aptamil', 'recall', 'infant formula'],
+    notes: '필터링된 결과 값의 변화 실시간 감지',
     last_hash: null,
     last_checked_at: null,
   },
 
-  // ========== KR (한국) - Tier 1 (IMAGE_OCR) ==========
+  // ========== KR (한국) - IMAGE_OCR ==========
   {
     source_key: 'nutricia_kr_aptamil_program',
     country_code: 'KR',
@@ -126,35 +71,7 @@ export const SOURCES: Source[] = [
     parse_strategy: 'IMAGE_OCR',
     reliability_label: 'OfficialStore',
     imageSelector: 'img[src*="/data/editor/board/"]',
-    notes: 'Tier 1: 압타밀 안심 프로그램. 이미지 OCR로 제조일자 추출',
-    last_hash: null,
-    last_checked_at: null,
-  },
-  
-  // ========== KR (한국) - Tier 1 (공지사항 목록) ==========
-  {
-    source_key: 'nutricia_kr_notice',
-    country_code: 'KR',
-    tier: 1,
-    url: 'https://www.nutriciastore.co.kr/board/list.php?bdId=notice',
-    parse_strategy: 'LIST_ITEMS',
-    reliability_label: 'OfficialStore',
-    keywords: ['압타밀', 'aptamil', '리콜', '회수'],
-    notes: 'Tier 1: NutriciaStore 공지사항. 목록에서 신규 항목 감지',
-    last_hash: null,
-    last_checked_at: null,
-  },
-  
-  // ========== KR (한국) - Tier 1 (참고용) ==========
-  {
-    source_key: 'mfds_kr',
-    country_code: 'KR',
-    tier: 1,
-    url: 'https://www.mfds.go.kr/brd/m_99/list.do',
-    parse_strategy: 'HTML_TEXT',
-    reliability_label: 'Regulator',
-    keywords: ['압타밀', 'aptamil'],
-    notes: 'Tier 2: MFDS 보도자료. 키워드 필터 적용',
+    notes: '압타밀 안심 프로그램. Vision API로 이미지 OCR',
     last_hash: null,
     last_checked_at: null,
   },
