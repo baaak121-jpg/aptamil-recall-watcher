@@ -601,9 +601,10 @@ async function scanImageOcr(
     // 제품명 + 날짜 조합으로 매칭
     const matchResult = matchOcrResults(fullOcrText, registeredItems);
     matched = matchResult.matched;
-    uncertain = matchResult.notFound;
+    // notFound는 리콜 대상이 아니므로 uncertain이 아님
+    uncertain = [];
     
-    console.log(`[Scanner] ${source.source_key}: Matched ${matched.length} items, Not found ${uncertain.length} items`);
+    console.log(`[Scanner] ${source.source_key}: Matched ${matched.length} items, Not in recall list ${matchResult.notFound.length} items`);
   } else {
     console.log(`[Scanner] ${source.source_key}: Skipping OCR (no change detected)`);
     matched = [];
