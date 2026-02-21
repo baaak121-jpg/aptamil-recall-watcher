@@ -45,6 +45,16 @@ function formatOcrResults(scanResults: any[]): string {
     section += `✅ OCR 실행: ${ocrResult.ocrExecuted ? '예' : '아니오'}\n`;
     section += `📅 추출된 MHD: ${ocrResult.extracted_dates?.length || 0}개\n`;
     
+    // 추출된 날짜 목록 표시 (최대 20개까지)
+    if (ocrResult.extracted_dates && ocrResult.extracted_dates.length > 0) {
+      const dates = ocrResult.extracted_dates.slice(0, 20);
+      section += `📋 추출된 날짜:\n`;
+      section += `   ${dates.join(', ')}\n`;
+      if (ocrResult.extracted_dates.length > 20) {
+        section += `   ... 외 ${ocrResult.extracted_dates.length - 20}개\n`;
+      }
+    }
+    
     if (ocrResult.matched_items.length > 0) {
       section += `🚨 매칭된 제품: ${ocrResult.matched_items.length}개\n`;
       ocrResult.matched_items.forEach((item: any) => {
