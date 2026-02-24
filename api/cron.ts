@@ -35,11 +35,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2. 등록된 항목 가져오기
     const items = await getItems();
 
-    // 3. 소스 가져오기 (초기화 필요 시 SOURCES 사용)
-    let sources = await getSources();
-    if (sources.length === 0) {
-      sources = SOURCES;
-    }
+    // 3. 소스는 항상 코드의 SOURCES 사용 (KV 무시)
+    const sources = SOURCES;
 
     // 4. 스캔 실행 (모든 소스 스캔 - Tier 구분 없음)
     const scanResults = await scanAllSources(sources, items);
