@@ -1,0 +1,15 @@
+name: Daily Cron Job
+
+on:
+  schedule:
+    # 매일 오전 8시 KST = 23:00 UTC (전날)
+    - cron: '0 23 * * *'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel Cron
+        run: |
+          curl -X POST "https://aptamil-recall-watcher.vercel.app/api/cron"

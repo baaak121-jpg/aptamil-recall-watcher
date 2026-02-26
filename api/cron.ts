@@ -37,27 +37,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 3. 소스는 항상 코드의 SOURCES 사용 (KV 무시)
     const sources = SOURCES;
+    
+    // 4. 중복 실행 방지: 30분 이내 실행 이력 확인
+    const lastChecked = sources[0]?.last_checked_at;
+    if (lastChecked) {
+      const timeSinceLastRun = Date.now() - new Date(lastChecked).getTime();
+      const thirtyMinutes = 30 * 60 * 1000;
+      
+      if (timeSinceLastRun < thirtyMinutes) {
+        console.log(`[Cron] Already ran ${Math.floor(timeSinceLastRun / 1000 / 60)} minutes ago. Skipping.`);
+        return res.status(200).json({ 
+          message: 'Skipped: Already ran recently',
+          lastRun: lastChecked,
+          minutesAgo: Math.floor(timeSinceLastRun / 1000 / 60)
+        });
+      }
+    }
 
-    // 4. 스캔 실행 (모든 소스 스캔 - Tier 구분 없음)
+    // 5. 스캔 실행 (모든 소스 스캔 - Tier 구분 없음)
     const scanResults = await scanAllSources(sources, items);
 
-    // 5. 결과 분석
+    // 6. 결과 분석
     const analysis = analyzeScanResults(scanResults, items);
 
-    // 6. 국가별 결과 생성
+    // 7. 국가별 결과 생성
     const countryResults = generateCountryResults(scanResults, items);
 
-    // 7. LLM 요약 생성 (변경 시에만)
+    // 8. LLM 요약 생성 (변경 시에만)
     const summary = await generateSummary(
       scanResults,
       analysis.matched_count,
       analysis.uncertain_count
     );
 
-    // 8. 모든 소스 링크 추출
+    // 9. 모든 소스 링크 추출
     const allLinks = sources.map((s) => s.url);
 
-    // 9. 데일리 리포트 생성
+    // 10. 데일리 리포트 생성
     const report: DailyReport = {
       date: getKSTDate(),
       risk_level: analysis.risk_level,
@@ -72,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       country_results: countryResults,
     };
 
-    // 10. 텔레그램 전송
+    // 11. 텔레그램 전송
     const bot = new TelegramBot(BOT_TOKEN);
     await sendDailyReport(bot, chatId, report);
 
