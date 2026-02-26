@@ -38,13 +38,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 3. 소스는 항상 코드의 SOURCES 사용 (KV 무시)
     const sources = SOURCES;
     
-    // 4. 중복 실행 방지: 30분 이내 실행 이력 확인
+    // 4. 중복 실행 방지: 1시간 이내 실행 이력 확인
     const lastChecked = sources[0]?.last_checked_at;
     if (lastChecked) {
       const timeSinceLastRun = Date.now() - new Date(lastChecked).getTime();
-      const thirtyMinutes = 30 * 60 * 1000;
+      const oneHour = 60 * 60 * 1000;
       
-      if (timeSinceLastRun < thirtyMinutes) {
+      if (timeSinceLastRun < oneHour) {
         console.log(`[Cron] Already ran ${Math.floor(timeSinceLastRun / 1000 / 60)} minutes ago. Skipping.`);
         return res.status(200).json({ 
           message: 'Skipped: Already ran recently',
