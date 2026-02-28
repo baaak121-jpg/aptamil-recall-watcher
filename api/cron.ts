@@ -35,11 +35,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2. 등록된 항목 가져오기
     const items = await getItems();
 
-    // 3. 소스는 항상 코드의 SOURCES 사용 (KV 무시)
-    const sources = SOURCES;
+    // 3. 중복 실행 방지: 1시간 이내 실행 이력 확인 (KV에서 실제 데이터 확인)
+    const kvSources = await getSources();
+    const lastChecked = kvSources.find(s => s.source_key === 'nutricia_kr_aptamil_program')?.last_checked_at;
     
-    // 4. 중복 실행 방지: 1시간 이내 실행 이력 확인
-    const lastChecked = sources[0]?.last_checked_at;
     if (lastChecked) {
       const timeSinceLastRun = Date.now() - new Date(lastChecked).getTime();
       const oneHour = 60 * 60 * 1000;
@@ -53,6 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
     }
+    
+    // 4. 소스는 항상 코드의 SOURCES 사용 (스캔용)
+    const sources = SOURCES;
 
     // 5. 스캔 실행 (모든 소스 스캔 - Tier 구분 없음)
     const scanResults = await scanAllSources(sources, items);
