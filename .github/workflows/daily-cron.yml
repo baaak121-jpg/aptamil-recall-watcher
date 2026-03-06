@@ -12,4 +12,5 @@ jobs:
     steps:
       - name: Trigger Vercel Cron
         run: |
-          curl -X POST "https://aptamil-recall-watcher.vercel.app/api/cron"
+          curl -X POST "https://aptamil-recall-watcher.vercel.app/api/cron" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

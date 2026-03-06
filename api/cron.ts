@@ -14,11 +14,17 @@ import { SOURCES, getTier1Sources, getTier1LinksByCountry } from '../src/sources
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Vercel Cron 인증 (선택적)
+  // Vercel Cron 인증 (필수)
   const authHeader = req.headers['authorization'];
   const cronSecret = process.env.CRON_SECRET;
   
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret) {
+    console.error('[Cron] CRON_SECRET not configured');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+  
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    console.warn('[Cron] Unauthorized access attempt');
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -35,9 +41,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2. 등록된 항목 가져오기
     const items = await getItems();
 
-    // 3. 중복 실행 방지: 1시간 이내 실행 이력 확인 (KV에서 실제 데이터 확인)
+    // 3. 소스 준비: 코드의 SOURCES와 KV 데이터 병합
     const kvSources = await getSources();
-    const lastChecked = kvSources.find(s => s.source_key === 'nutricia_kr_aptamil_program')?.last_checked_at;
+    const sources = SOURCES.map(codeSource => {
+      // KV에서 동일한 source_key 찾기
+      const kvSource = kvSources.find(s => s.source_key === codeSource.source_key);
+      
+      // KV 데이터가 있으면 last_hash, last_checked_at 사용
+      if (kvSource) {
+        return {
+          ...codeSource,
+          last_hash: kvSource.last_hash,
+          last_checked_at: kvSource.last_checked_at,
+        };
+      }
+      
+      return codeSource;
+    });
+    
+    // 4. 중복 실행 방지: 1시간 이내 실행 이력 확인
+    const lastChecked = sources[0]?.last_checked_at;
     
     if (lastChecked) {
       const timeSinceLastRun = Date.now() - new Date(lastChecked).getTime();
@@ -52,9 +75,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
     }
-    
-    // 4. 소스는 항상 코드의 SOURCES 사용 (스캔용)
-    const sources = SOURCES;
 
     // 5. 스캔 실행 (모든 소스 스캔 - Tier 구분 없음)
     const scanResults = await scanAllSources(sources, items);
