@@ -35,8 +35,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2. 등록된 항목 가져오기
     const items = await getItems();
 
-    // 3. 소스는 항상 코드의 SOURCES 사용 (KV 무시)
-    const sources = SOURCES;
+    // 3. 소스 정의는 코드의 SOURCES 사용 + KV의 last_hash/last_checked_at 병합
+    // (이미지 변경 감지를 위해 이전 스캔 해시 참조)
+    const savedSources = await getSources();
+    const sources = SOURCES.map(s => {
+      const saved = savedSources.find(ss => ss.source_key === s.source_key);
+      return saved ? { ...s, last_hash: saved.last_hash, last_checked_at: saved.last_checked_at } : s;
+    });
 
     // 4. 스캔 실행 (모든 소스 스캔 - Tier 구분 없음)
     const scanResults = await scanAllSources(sources, items);

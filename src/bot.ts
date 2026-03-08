@@ -274,10 +274,14 @@ async function generateFullReport(bot: TelegramBot, chatId: number): Promise<voi
     // 1. 등록된 항목 가져오기
     const items = await getItems();
     
-    // 2. 소스는 항상 코드의 SOURCES 사용 (KV 무시)
-    const sources = SOURCES;
+    // 2. 소스 정의는 코드의 SOURCES 사용 + KV의 last_hash/last_checked_at 병합
+    const savedSources = await getSources();
+    const sources = SOURCES.map((s: any) => {
+      const saved = savedSources.find((ss: any) => ss.source_key === s.source_key);
+      return saved ? { ...s, last_hash: saved.last_hash, last_checked_at: saved.last_checked_at } : s;
+    });
     
-    // 3. KR IMAGE_OCR 소스를 forceOcr=true로 스캔
+    // 3. KR IMAGE_OCR 소스를 forceOcr=true로 스캔 (/report는 항상 OCR 실행)
     const krOcrSource = sources.find((s: any) => s.source_key === 'nutricia_kr_aptamil_program');
     const otherSources = sources.filter((s: any) => s.source_key !== 'nutricia_kr_aptamil_program');
     
